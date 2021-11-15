@@ -57,10 +57,7 @@
 			}
 		}
 		localStorage.setItem(document.baseURI, JSON.stringify(references));
-		console.log(
-			"Successfully copied the references! Refs are: ",
-			references
-		);
+		console.log("Successfully copied the references! Refs are: ", references);
 	}
 
 	/**
@@ -161,35 +158,34 @@
 		// highlight the underlying DOM elements that point is pointing
 		// to. How?
 		//      Add click handler to body (to encompass all relevant divs)
-		document.body.addEventListener(
-			"click",
-			modifySelectedRegionStyles,
-			false
-		);
+		document.body.addEventListener("click", modifySelectedRegionStyles, false);
 	}
 
 	prevSelection = null;
 	function modifySelectedRegionStyles(ev) {
 		console.log("Event target was: ", ev.target);
 		console.log("Previous selection is now: ", prevSelection);
-		// Check if this is the same event that was clicked last time
-		//  by using the textContent attribute
+
+		// Won't always look at the true event.target when
+		// comparing prevSelection to next. Instead, recurse
+		// up, set prevSelection to <li> containing the actual
+		// event.target, then do comparison and/or highlighting.
+		// This will make it easier to highlight the
+		// entire <ol> or <ul> when/if needed.
+		var elementContainingTarget = findListItem(ev.target);
 		if (prevSelection != null) {
 			// Same element clicked twice
-			if (prevSelection.textContent == ev.target.textContent) {
+			if (prevSelection.textContent == elementContainingTarget.textContent) {
 				// 3. Once user clicks again on the DOM element,
 				//      extract the references from that DOM element
-				extractReferences(ev.target);
+				extractReferences(elementContainingTarget);
 				// 4. Finally, revert the cursor to its original form andd
 				// remove all highlighting
 				document.body.style.cursor = "default";
-				ev.target.style.backgroundColor = "";
-				ev.target.style.borderStyle = "";
+				elementContainingTarget.style.backgroundColor = "";
+				elementContainingTarget.style.borderStyle = "";
 				// Remove listener now
-				document.body.removeEventListener(
-					"click",
-					modifySelectedRegionStyles
-				);
+				document.body.removeEventListener("click", modifySelectedRegionStyles);
 				// Return early and reset sentinel to prevent the
 				//  styling from being reverted
 				prevSelection = null;
@@ -201,11 +197,25 @@
 				prevSelection.style.borderStyle = "";
 			}
 		}
-		prevSelection = ev.target;
-		//      When click happens, get event.target, which should point to the
-		//          location of the innermost element where you actually clicked
-		ev.target.style.backgroundColor = "lightblue";
-		ev.target.style.borderStyle = "solid";
+		prevSelection = elementContainingTarget;
+		// When click happens, get event.target, which should point to the
+		// location of the innermost element where you actually clicked
+		elementContainingTarget.style.backgroundColor = "lightblue";
+		elementContainingTarget.style.borderStyle = "solid";
+	}
+
+	/**
+	 * Recursively search up parent element tree of a
+	 * given element until a list item element (i.e. an
+	 * element with nodename "LI") is found.
+	 */
+	function findListItem(element) {
+		console.log("Current element in recursion is: ", element);
+		if (element.nodeName === "LI") {
+			return element;
+		} else {
+			return findListItem(element.parentElement);
+		}
 	}
 
 	/**
