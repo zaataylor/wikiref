@@ -1,0 +1,26 @@
+{
+	"manifest_version": 2,
+	"name": "Wiki Refs",
+	"version": "1.0",
+
+	"description": "Easily save Wikipedia references on the current page",
+
+	"icons": {
+		"48": "icons/wiki-ref-48.png"
+	},
+
+	"permissions": ["activeTab"],
+
+	"browser_action": {
+		"default_icon": "icons/wiki-ref-48.png",
+		"default_title": "WikiRef",
+		"default_popup": "popup/wikiref.html"
+	},
+
+	"content_scripts": [
+		{
+			"matches": ["*://*.wikipedia.org/*"],
+			"js": ["wikiref.js"]
+		}
+	]
+}

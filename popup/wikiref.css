@@ -1,0 +1,43 @@
+html,
+body {
+	width: 200px;
+}
+
+.hidden {
+	display: none;
+}
+
+.button {
+	margin: 3% auto;
+	padding: 4px;
+	text-align: center;
+	font-size: 1.2em;
+	font-family: "Gill Sans", "Gill Sans MT", Calibri, "Trebuchet MS",
+		sans-serif;
+	cursor: pointer;
+}
+
+.extract-refs:hover {
+	background-color: #cff2f2;
+}
+
+.extract-refs {
+	background-color: #e5f2f2;
+	font-size: 0.8em;
+}
+
+.list-refs {
+	background-color: #fbfbc9;
+}
+
+.list-refs:hover {
+	background-color: #eaea9d;
+}
+
+.select-refs {
+	background-color: #cbcefb;
+}
+
+.select-refs:hover {
+	background-color: #af9dea;
+}
