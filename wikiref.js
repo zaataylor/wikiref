@@ -10,6 +10,7 @@
 	window.hasRun = true;
 
 	function extractReferences(selection) {
+		// TODO: Update this logic to make it more generic
 		// Looking for element with class="references"
 		console.log("Selection is: ", selection);
 		var referenceList =
@@ -156,9 +157,8 @@
 		document.body.style.cursor = "pointer";
 		// 2. When user holds down cursor/mouse at a particular point,
 		// highlight the underlying DOM elements that point is pointing
-		// to. How?
-		//      Add click handler to body (to encompass all relevant divs)
-		document.body.addEventListener("click", modifySelectedRegionStyles, false);
+		// to. How? Add click handler to body (to encompass all relevant divs)
+		document.body.addEventListener("click", modifySelectedRegionStyles, true);
 	}
 
 	prevSelection = null;
@@ -173,35 +173,121 @@
 		// This will make it easier to highlight the
 		// entire <ol> or <ul> when/if needed.
 		var elementContainingTarget = findListItem(ev.target);
+		console.log("Event target is contained by: ", elementContainingTarget);
+		console.log("Previous selection is: ", prevSelection);
 		if (prevSelection != null) {
-			// Same element clicked twice
-			if (prevSelection.textContent == elementContainingTarget.textContent) {
-				// 3. Once user clicks again on the DOM element,
-				//      extract the references from that DOM element
-				extractReferences(elementContainingTarget);
-				// 4. Finally, revert the cursor to its original form andd
-				// remove all highlighting
-				document.body.style.cursor = "default";
-				elementContainingTarget.style.backgroundColor = "";
-				elementContainingTarget.style.borderStyle = "";
-				// Remove listener now
-				document.body.removeEventListener("click", modifySelectedRegionStyles);
-				// Return early and reset sentinel to prevent the
-				//  styling from being reverted
-				prevSelection = null;
-				return;
-			} else {
-				// Let's remove the styling on the previously clicked
-				// element since we clicked off of it
-				prevSelection.style.backgroundColor = "";
-				prevSelection.style.borderStyle = "";
-			}
+			removeStyles(prevSelection);
+			removeRefSelectionOptions(prevSelection);
 		}
+
+		// if (ev.target.nodeName === "BUTTON") {
+		// } else {
+		insertStyles(elementContainingTarget);
+		insertRefSelectionOptions(elementContainingTarget);
 		prevSelection = elementContainingTarget;
-		// When click happens, get event.target, which should point to the
-		// location of the innermost element where you actually clicked
-		elementContainingTarget.style.backgroundColor = "lightblue";
-		elementContainingTarget.style.borderStyle = "solid";
+		// }
+	}
+
+	function insertStyles(element) {
+		element.style.backgroundColor = "lightblue";
+		element.style.borderStyle = "solid";
+	}
+
+	function removeStyles(element) {
+		element.style.backgroundColor = "";
+		element.style.borderStyle = "";
+	}
+
+	/**
+	 * Add style div to highlighted region that enables you to
+	 * confirm, expand, or cancel selection
+	 */
+	function insertRefSelectionOptions(element) {
+		var firstChild = element.firstElementChild;
+		var lastChild = element.lastElementChild;
+		lastChild.insertAdjacentHTML(
+			"afterend",
+			'<div id="ref-select-div" style="display: block"><button id="ref-select-extraction" style="background-color: green; border-radius: 10%">&check;</button><button id="ref-select-expansion" style="background-color: lightskyblue; border-radius: 10%">Expand Selection</button><button id="ref-select-cancel" style="background-color: red; border-radius: 10%">&#10005;</button></div>'
+		);
+		// // Set parentElement property of element we just inserted into the DOM
+		// var refSelectDiv = document.getElementById("ref-select-div");
+		// refSelectDiv.parentElement = element;
+
+		// Add event listeners to each button
+		// Extract references when check is clicked
+		var checkButton = document.getElementById("ref-select-extraction");
+		checkButton.addEventListener(
+			"click",
+			(ev) => {
+				console.log("event.target is: ", ev.target);
+				console.log(
+					"event.target's grandparent is: ",
+					firstChild.parentElement
+				);
+				// TODO: Figure out logic here. It will differ based
+				// on if we're looking at a single list item or the
+				// whole list, so maybe I can differentiate based on nodeName here?
+
+				// removeStyles(ev.target);
+				// extractReferences(firstChild.parentElement);
+			},
+			false
+		);
+
+		// Expand selection to parent element whenever "Expand Selection" is clicked
+		var expandButton = document.getElementById("ref-select-expansion");
+		expandButton.addEventListener(
+			"click",
+			(ev) => {
+				console.log(
+					"Event target parent in expandSelection is: ",
+					ev.target.parentElement
+				);
+				console.log(
+					"Event target grandparent in expandSelection is: ",
+					firstChild.parentElement
+				);
+				removeStyles(firstChild.parentElement);
+				removeRefSelectionOptions(firstChild.parentElement);
+				var parentElement = expandSelection(firstChild.parentElement);
+				insertStyles(parentElement);
+				insertRefSelectionOptions(parentElement);
+			},
+			true
+		);
+
+		// Cancel Selection whenever "X" is clicked
+		var cancelButton = document.getElementById("ref-select-cancel");
+		cancelButton.addEventListener(
+			"click",
+			(ev) => {
+				cancelSelection(firstChild.parentElement);
+				removeRefSelectionOptions(firstChild.parentElement);
+				prevSelection = null;
+				document.body.style.cursor = "default";
+				document.body.removeEventListener("click", modifySelectedRegionStyles);
+			},
+			false
+		);
+	}
+
+	function removeRefSelectionOptions(element) {
+		// var refSelectDiv = element.getElementById("ref-select-div");
+		// if (refSelectDiv !== null) {
+		// 	element.removeChild(refSelectDiv);
+		// }
+		element.removeChild(element.lastElementChild);
+	}
+
+	function expandSelection(element) {
+		var parent = element.parentElement;
+		console.log("parent element in expandSelection is: ", parent);
+		insertStyles(parent);
+		return parent;
+	}
+
+	function cancelSelection(element) {
+		removeStyles(element);
 	}
 
 	/**
@@ -210,7 +296,6 @@
 	 * element with nodename "LI") is found.
 	 */
 	function findListItem(element) {
-		console.log("Current element in recursion is: ", element);
 		if (element.nodeName === "LI") {
 			return element;
 		} else {
