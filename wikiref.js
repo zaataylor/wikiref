@@ -9,54 +9,108 @@
 	}
 	window.hasRun = true;
 
-	function extractReferences(selection) {
-		// TODO: Update this logic to make it more generic
-		// Looking for element with class="references"
-		console.log("Selection is: ", selection);
-		var referenceList =
-			selection !== null
-				? selection.getElementsByClassName("references")
-				: document.getElementsByClassName("references");
-		var references = [];
-		if (referenceList.length > 0) {
-			// Idea: Last element of this type will be actual References
-			// section since these are the bottommost part of the page
-			var refList = referenceList[referenceList.length - 1];
-			// console.log("Reference List is: ", refList);
-			var children = refList.children;
-
-			for (var i = 0; i < children.length; i++) {
-				// console.log("Child innerText is: ", children[i].innerText);
-				// console.log("Child Element is: ", children[i]);
-				// Get reference text <span> element. It may or may not contain external
-				// links that we should keep track of
-				var ref = {
-					id: i,
-					text: "",
-					links: [],
-				};
-				var referenceTextSpan =
-					children[i].getElementsByClassName("reference-text")[0];
-				ref.text = referenceTextSpan.innerText;
-				// console.log(
-				// 	"Reference Text Span Contains: ",
-				// 	referenceTextSpan.innerText
-				// );
-				var a_children = referenceTextSpan.getElementsByTagName("a");
-				// console.log("<a> Children are: ", a_children);
-				for (var k = 0; k < a_children.length; k++) {
-					// extract the links that are external references only for now
-					if (
-						a_children[k].classList.contains("external") &&
-						a_children[k].rel === "nofollow"
-					) {
-						ref.links.push(a_children[k].href);
-					}
-				}
-				// console.log("Ref is: ", ref);
-				references.push(ref);
+	function extractReference(child, index) {
+		console.log("Child is: ", child);
+		var ref = {
+			id: index,
+			text: "",
+			links: [],
+		};
+		// Try to get reference text <span> element. It may
+		// or may not contain external inks that we should keep track of
+		var referenceTextSpan = child.getElementsByClassName("reference-text")[0];
+		ref.text = referenceTextSpan.innerText;
+		var a_children = referenceTextSpan.getElementsByTagName("a");
+		for (var k = 0; k < a_children.length; k++) {
+			// Extract the links that are external references only for now
+			if (
+				a_children[k].classList.contains("external") &&
+				a_children[k].rel === "nofollow"
+			) {
+				ref.links.push(a_children[k].href);
 			}
 		}
+		console.log("About to return ref: ", ref);
+		return ref;
+	}
+
+	function extractReferencesFromSelection(selection) {
+		// TODO: Update this logic to make it more generic
+		console.log("Selection is: ", selection);
+		var references = [];
+		// Need to differentiate a few different cases
+		if (selection === null) {
+			console.log("Selection is null!");
+			//	1. element is "null" -> try to auto-extract using heuristic of finding
+			//		last element with class "references" in document
+			var referenceElements = document.getElementsByClassName("references");
+			var referenceList = referenceElements[referenceElements.length - 1];
+			var children = referenceList.children;
+			if (children.length > 0) {
+				for (var i = 0; i < children.length; i++) {
+					references.push(extractReference(children[i], i));
+				}
+			}
+		} else if (selection.nodeName === "LI") {
+			//	2. element.nodeName is "LI" -> extract refs from list item and update
+			//		localStorage appropriately
+			references.push(extractReference(selection, 0));
+		} else if (selection.nodeName === "UL" || selection.nodeName === "OL") {
+			console.log("Selection is of type: ", selection.nodeName);
+			//	3. element.nodeName is "UL" or "OL" -> extract refs from list of refs
+			//		and update localStorage appropriately
+			var children = selection.children;
+			if (children.length > 0) {
+				for (var i = 0; i < children.length; i++) {
+					references.push(extractReference(children[i], i));
+				}
+			}
+		}
+		// var referenceList =
+		// 	selection !== null
+		// 		? selection.getElementsByClassName("references")
+		// 		: document.getElementsByClassName("references");
+		// var references = [];
+		// if (referenceList.length > 0) {
+		// 	// Idea: Last element of this type will be actual References
+		// 	// section since these are the bottommost part of the page
+		// 	var refList = referenceList[referenceList.length - 1];
+		// 	// console.log("Reference List is: ", refList);
+		// 	var children = refList.children;
+
+		// 	for (var i = 0; i < children.length; i++) {
+		// 		// console.log("Child innerText is: ", children[i].innerText);
+		// 		// console.log("Child Element is: ", children[i]);
+		// 		// Get reference text <span> element. It may or may not contain external
+		// 		// links that we should keep track of
+		// 		var ref = {
+		// 			id: i,
+		// 			text: "",
+		// 			links: [],
+		// 		};
+		// 		var referenceTextSpan =
+		// 			children[i].getElementsByClassName("reference-text")[0];
+		// 		ref.text = referenceTextSpan.innerText;
+		// 		// console.log(
+		// 		// 	"Reference Text Span Contains: ",
+		// 		// 	referenceTextSpan.innerText
+		// 		// );
+		// 		var a_children = referenceTextSpan.getElementsByTagName("a");
+		// 		// console.log("<a> Children are: ", a_children);
+		// 		for (var k = 0; k < a_children.length; k++) {
+		// 			// extract the links that are external references only for now
+		// 			if (
+		// 				a_children[k].classList.contains("external") &&
+		// 				a_children[k].rel === "nofollow"
+		// 			) {
+		// 				ref.links.push(a_children[k].href);
+		// 			}
+		// 		}
+		// 		// console.log("Ref is: ", ref);
+		// 		references.push(ref);
+		// 	}
+		// }
+		// Set these in local storage
 		localStorage.setItem(document.baseURI, JSON.stringify(references));
 		console.log("Successfully copied the references! Refs are: ", references);
 	}
@@ -69,8 +123,6 @@
 	function listReferences() {
 		var refString = localStorage.getItem(document.baseURI);
 		var refs = JSON.parse(refString);
-		console.log("REFS is: ", refs);
-		console.log("1.");
 		// Create div to add to document body
 		var refListPopup = document.createElement("div", {
 			id: "reference-list-popup",
@@ -128,12 +180,10 @@
 			tr.appendChild(td2);
 
 			table.appendChild(tr);
-			console.log("Added row: ", tr);
 		}
 		refListPopup.appendChild(table);
 
 		document.body.appendChild(refListPopup);
-		console.log("References are: ", refs);
 	}
 
 	/**
@@ -174,18 +224,14 @@
 		// entire <ol> or <ul> when/if needed.
 		var elementContainingTarget = findListItem(ev.target);
 		console.log("Event target is contained by: ", elementContainingTarget);
-		console.log("Previous selection is: ", prevSelection);
 		if (prevSelection != null) {
 			removeStyles(prevSelection);
 			removeRefSelectionOptions(prevSelection);
 		}
 
-		// if (ev.target.nodeName === "BUTTON") {
-		// } else {
 		insertStyles(elementContainingTarget);
 		insertRefSelectionOptions(elementContainingTarget);
 		prevSelection = elementContainingTarget;
-		// }
 	}
 
 	function insertStyles(element) {
@@ -199,37 +245,28 @@
 	}
 
 	/**
-	 * Add style div to highlighted region that enables you to
+	 * Adds a styled div to the highlighted region that enables you to
 	 * confirm, expand, or cancel selection
 	 */
 	function insertRefSelectionOptions(element) {
-		var firstChild = element.firstElementChild;
 		var lastChild = element.lastElementChild;
 		lastChild.insertAdjacentHTML(
 			"afterend",
 			'<div id="ref-select-div" style="display: block"><button id="ref-select-extraction" style="background-color: green; border-radius: 10%">&check;</button><button id="ref-select-expansion" style="background-color: lightskyblue; border-radius: 10%">Expand Selection</button><button id="ref-select-cancel" style="background-color: red; border-radius: 10%">&#10005;</button></div>'
 		);
-		// // Set parentElement property of element we just inserted into the DOM
-		// var refSelectDiv = document.getElementById("ref-select-div");
-		// refSelectDiv.parentElement = element;
 
-		// Add event listeners to each button
 		// Extract references when check is clicked
 		var checkButton = document.getElementById("ref-select-extraction");
 		checkButton.addEventListener(
 			"click",
 			(ev) => {
-				console.log("event.target is: ", ev.target);
-				console.log(
-					"event.target's grandparent is: ",
-					firstChild.parentElement
-				);
-				// TODO: Figure out logic here. It will differ based
-				// on if we're looking at a single list item or the
-				// whole list, so maybe I can differentiate based on nodeName here?
-
-				// removeStyles(ev.target);
-				// extractReferences(firstChild.parentElement);
+				// Remove styles and refSelectionOptions from the
+				// element that the selection options div is a child
+				// of, and extract references. This should be
+				// one of <li>, <ul>, or <ol>
+				removeStyles(element);
+				removeRefSelectionOptions(element);
+				extractReferencesFromSelection(element);
 			},
 			false
 		);
@@ -239,19 +276,15 @@
 		expandButton.addEventListener(
 			"click",
 			(ev) => {
-				console.log(
-					"Event target parent in expandSelection is: ",
-					ev.target.parentElement
-				);
-				console.log(
-					"Event target grandparent in expandSelection is: ",
-					firstChild.parentElement
-				);
-				removeStyles(firstChild.parentElement);
-				removeRefSelectionOptions(firstChild.parentElement);
-				var parentElement = expandSelection(firstChild.parentElement);
-				insertStyles(parentElement);
+				// Remove styling from currently selected element, then...
+				removeStyles(element);
+				removeRefSelectionOptions(element);
+				// Expand selection to the parent element, then...
+				var parentElement = expandSelection(element);
+				// Insert selection options underneath this parent element, then...
 				insertRefSelectionOptions(parentElement);
+				// Update prevSelection to be the new parentElement
+				prevSelection = parentElement;
 			},
 			true
 		);
@@ -261,8 +294,8 @@
 		cancelButton.addEventListener(
 			"click",
 			(ev) => {
-				cancelSelection(firstChild.parentElement);
-				removeRefSelectionOptions(firstChild.parentElement);
+				removeStyles(element);
+				removeRefSelectionOptions(element);
 				prevSelection = null;
 				document.body.style.cursor = "default";
 				document.body.removeEventListener("click", modifySelectedRegionStyles);
@@ -272,22 +305,17 @@
 	}
 
 	function removeRefSelectionOptions(element) {
-		// var refSelectDiv = element.getElementById("ref-select-div");
-		// if (refSelectDiv !== null) {
-		// 	element.removeChild(refSelectDiv);
-		// }
 		element.removeChild(element.lastElementChild);
 	}
 
+	/**
+	 * Expands currently selected region to encompass
+	 * parent element of the element passed in
+	 */
 	function expandSelection(element) {
 		var parent = element.parentElement;
-		console.log("parent element in expandSelection is: ", parent);
 		insertStyles(parent);
 		return parent;
-	}
-
-	function cancelSelection(element) {
-		removeStyles(element);
 	}
 
 	/**
@@ -309,13 +337,10 @@
 	 */
 	browser.runtime.onMessage.addListener((message) => {
 		if (message.command === "extractRefs") {
-			console.log("About to extract references!");
-			extractReferences(null);
+			extractReferencesFromSelection(null);
 		} else if (message.command === "listRefs") {
-			console.log("About to display references!");
 			listReferences();
 		} else if (message.command === "selectRefs") {
-			console.log("About to select references!");
 			selectReferences();
 		}
 	});
