@@ -16,31 +16,38 @@
 			text: "",
 			links: [],
 		};
-		// Try to get reference text <span> element. It may
-		// or may not contain external inks that we should keep track of
-		var referenceTextSpan = child.getElementsByClassName("reference-text")[0];
-		ref.text = referenceTextSpan.innerText;
-		var a_children = referenceTextSpan.getElementsByTagName("a");
+
+		ref.text = child.innerText;
+		var a_children = child.getElementsByTagName("a");
 		for (var k = 0; k < a_children.length; k++) {
-			// Extract the links that are external references only for now
+			// Extract the unique links that are external references only (for now)
 			if (
 				a_children[k].classList.contains("external") &&
-				a_children[k].rel === "nofollow"
+				a_children[k].rel === "nofollow" &&
+				!ref.links.includes(a_children[k].href)
 			) {
 				ref.links.push(a_children[k].href);
 			}
 		}
-		console.log("About to return ref: ", ref);
 		return ref;
 	}
 
 	function extractReferencesFromSelection(selection) {
-		// TODO: Update this logic to make it more generic
 		console.log("Selection is: ", selection);
 		var references = [];
+		var startIndex = 0;
+		// Seeing what's already in localStorage, if
+		// anything. If there is something, update the data to include the
+		// new additions. This'll enable one to combine references from
+		// different parts of the same document.
+		var localStorageContents = localStorage.getItem(document.baseURI);
+		if (localStorageContents !== null) {
+			var oldRefs = JSON.parse(localStorageContents);
+			startIndex = oldRefs.length;
+			references = oldRefs;
+		}
 		// Need to differentiate a few different cases
 		if (selection === null) {
-			console.log("Selection is null!");
 			//	1. element is "null" -> try to auto-extract using heuristic of finding
 			//		last element with class "references" in document
 			var referenceElements = document.getElementsByClassName("references");
@@ -48,13 +55,13 @@
 			var children = referenceList.children;
 			if (children.length > 0) {
 				for (var i = 0; i < children.length; i++) {
-					references.push(extractReference(children[i], i));
+					references.push(extractReference(children[i], i + startIndex));
 				}
 			}
 		} else if (selection.nodeName === "LI") {
 			//	2. element.nodeName is "LI" -> extract refs from list item and update
 			//		localStorage appropriately
-			references.push(extractReference(selection, 0));
+			references.push(extractReference(selection, startIndex));
 		} else if (selection.nodeName === "UL" || selection.nodeName === "OL") {
 			console.log("Selection is of type: ", selection.nodeName);
 			//	3. element.nodeName is "UL" or "OL" -> extract refs from list of refs
@@ -62,55 +69,11 @@
 			var children = selection.children;
 			if (children.length > 0) {
 				for (var i = 0; i < children.length; i++) {
-					references.push(extractReference(children[i], i));
+					references.push(extractReference(children[i], i + startIndex));
 				}
 			}
 		}
-		// var referenceList =
-		// 	selection !== null
-		// 		? selection.getElementsByClassName("references")
-		// 		: document.getElementsByClassName("references");
-		// var references = [];
-		// if (referenceList.length > 0) {
-		// 	// Idea: Last element of this type will be actual References
-		// 	// section since these are the bottommost part of the page
-		// 	var refList = referenceList[referenceList.length - 1];
-		// 	// console.log("Reference List is: ", refList);
-		// 	var children = refList.children;
 
-		// 	for (var i = 0; i < children.length; i++) {
-		// 		// console.log("Child innerText is: ", children[i].innerText);
-		// 		// console.log("Child Element is: ", children[i]);
-		// 		// Get reference text <span> element. It may or may not contain external
-		// 		// links that we should keep track of
-		// 		var ref = {
-		// 			id: i,
-		// 			text: "",
-		// 			links: [],
-		// 		};
-		// 		var referenceTextSpan =
-		// 			children[i].getElementsByClassName("reference-text")[0];
-		// 		ref.text = referenceTextSpan.innerText;
-		// 		// console.log(
-		// 		// 	"Reference Text Span Contains: ",
-		// 		// 	referenceTextSpan.innerText
-		// 		// );
-		// 		var a_children = referenceTextSpan.getElementsByTagName("a");
-		// 		// console.log("<a> Children are: ", a_children);
-		// 		for (var k = 0; k < a_children.length; k++) {
-		// 			// extract the links that are external references only for now
-		// 			if (
-		// 				a_children[k].classList.contains("external") &&
-		// 				a_children[k].rel === "nofollow"
-		// 			) {
-		// 				ref.links.push(a_children[k].href);
-		// 			}
-		// 		}
-		// 		// console.log("Ref is: ", ref);
-		// 		references.push(ref);
-		// 	}
-		// }
-		// Set these in local storage
 		localStorage.setItem(document.baseURI, JSON.stringify(references));
 		console.log("Successfully copied the references! Refs are: ", references);
 	}
@@ -187,20 +150,9 @@
 	}
 
 	/**
-	 * Helper function that returns a string containing information
-	 * on a list of links
+	 * Changes cursor to pointer and adds event listener to
+	 * document body to selection of reference sections.
 	 */
-	function displayLinks(links) {
-		if (links.length == 0) {
-			return "No references here!";
-		}
-		result = "";
-		for (var i = 0; i < links.length; i++) {
-			result += `${i + 1}: ${links[i]}`;
-		}
-		return result;
-	}
-
 	function selectReferences() {
 		// Steps:
 		// 1. Change style of cursor to a pointer
@@ -249,11 +201,14 @@
 	 * confirm, expand, or cancel selection
 	 */
 	function insertRefSelectionOptions(element) {
-		var lastChild = element.lastElementChild;
-		lastChild.insertAdjacentHTML(
-			"afterend",
-			'<div id="ref-select-div" style="display: block"><button id="ref-select-extraction" style="background-color: green; border-radius: 10%">&check;</button><button id="ref-select-expansion" style="background-color: lightskyblue; border-radius: 10%">Expand Selection</button><button id="ref-select-cancel" style="background-color: red; border-radius: 10%">&#10005;</button></div>'
-		);
+		// Thank you, Stack Overflow:
+		// 		https://stackoverflow.com/a/494348/8782284
+		var div = document.createElement("div");
+		var htmlString =
+			'<div id="ref-select-div" style="display: block"><button id="ref-select-extraction" style="background-color: green; border-radius: 10%">&check;</button><button id="ref-select-expansion" style="background-color: lightskyblue; border-radius: 10%">Expand Selection</button><button id="ref-select-cancel" style="background-color: red; border-radius: 10%">&#10005;</button></div>';
+		div.innerHTML = htmlString.trim();
+		var refSelectDiv = div.firstElementChild;
+		element.appendChild(refSelectDiv);
 
 		// Extract references when check is clicked
 		var checkButton = document.getElementById("ref-select-extraction");
