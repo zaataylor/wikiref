@@ -10,7 +10,6 @@
 	window.hasRun = true;
 
 	function extractReference(child, index) {
-		console.log("Child is: ", child);
 		var ref = {
 			id: index,
 			text: "",
@@ -33,7 +32,6 @@
 	}
 
 	function extractReferencesFromSelection(selection) {
-		console.log("Selection is: ", selection);
 		var references = [];
 		var startIndex = 0;
 		// Seeing what's already in localStorage, if
@@ -170,13 +168,11 @@
 		var endPart = splitLowercaseURI[splitLowercaseURI.length - 1];
 		var filename = `${endPart}.json`;
 
-		console.log("About to send message to background script!");
 		const type = "downloadMessage";
 		const { response, objectURL } = await browser.runtime.sendMessage({
 			type,
 			data: { references, filename },
 		});
-		console.log("Response was: ", response);
 		// Revoke object URL of file after download completes
 		URL.revokeObjectURL(objectURL);
 	}
@@ -197,9 +193,6 @@
 
 	prevSelection = null;
 	function modifySelectedRegionStyles(ev) {
-		console.log("Event target was: ", ev.target);
-		console.log("Previous selection is now: ", prevSelection);
-
 		// Won't always look at the true event.target when
 		// comparing prevSelection to next. Instead, recurse
 		// up, set prevSelection to <li> containing the actual
@@ -207,7 +200,6 @@
 		// This will make it easier to highlight the
 		// entire <ol> or <ul> when/if needed.
 		var elementContainingTarget = findListItem(ev.target);
-		console.log("Event target is contained by: ", elementContainingTarget);
 		if (prevSelection != null) {
 			removeStyles(prevSelection);
 			removeRefSelectionOptions(prevSelection);
@@ -284,7 +276,6 @@
 			(ev) => {
 				removeStyles(element);
 				removeRefSelectionOptions(element);
-				prevSelection = null;
 				exitSelectionMode();
 			},
 			false
@@ -296,8 +287,15 @@
 		document.body.removeEventListener("click", modifySelectedRegionStyles);
 	}
 
+	/**
+	 * Removes reference selection div that was attached to the element
+	 * as the last element child using the ID of the div.
+	 */
 	function removeRefSelectionOptions(element) {
-		element.removeChild(element.lastElementChild);
+		var selectionDiv = document.getElementById("ref-select-div");
+		if (selectionDiv !== null) {
+			element.removeChild(selectionDiv);
+		}
 	}
 
 	/**
@@ -334,9 +332,6 @@
 			listReferences();
 		} else if (message.command === "downloadRefs") {
 			downloadReferences();
-			// .then((res) => {
-			// 	console.log("Response was: ", res);
-			// });
 		} else if (message.command === "selectRefs") {
 			selectReferences();
 		}
