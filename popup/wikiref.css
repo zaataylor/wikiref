@@ -12,8 +12,7 @@ body {
 	padding: 4px;
 	text-align: center;
 	font-size: 1.2em;
-	font-family: "Gill Sans", "Gill Sans MT", Calibri, "Trebuchet MS",
-		sans-serif;
+	font-family: "Gill Sans", "Gill Sans MT", Calibri, "Trebuchet MS", sans-serif;
 	cursor: pointer;
 }
 
@@ -40,4 +39,12 @@ body {
 
 .select-refs:hover {
 	background-color: #af9dea;
+}
+
+.download-refs {
+	background-color: bisque;
+}
+
+.download-refs:hover {
+	background-color: rgba(255, 205, 196, 0.993);
 }

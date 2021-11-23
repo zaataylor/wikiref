@@ -40,7 +40,7 @@
 		// anything. If there is something, update the data to include the
 		// new additions. This'll enable one to combine references from
 		// different parts of the same document.
-		var localStorageContents = localStorage.getItem(document.baseURI);
+		var localStorageContents = localStorage.getItem(getBaseURI());
 		if (localStorageContents !== null) {
 			var oldRefs = JSON.parse(localStorageContents);
 			startIndex = oldRefs.length;
@@ -74,8 +74,16 @@
 			}
 		}
 
-		localStorage.setItem(document.baseURI, JSON.stringify(references));
+		localStorage.setItem(getBaseURI(), JSON.stringify(references));
 		console.log("Successfully copied the references! Refs are: ", references);
+	}
+
+	/**
+	 * Gets base URI by trimming extra characters that might
+	 * indicate an article heading.
+	 */
+	function getBaseURI() {
+		return document.baseURI.split("#")[0];
 	}
 
 	/**
@@ -84,7 +92,7 @@
 	 * "Title" and "Links"
 	 */
 	function listReferences() {
-		var refString = localStorage.getItem(document.baseURI);
+		var refString = localStorage.getItem(getBaseURI());
 		var refs = JSON.parse(refString);
 		// Create div to add to document body
 		var refListPopup = document.createElement("div", {
@@ -98,9 +106,7 @@
 		refListPopup.style.background = "aquamarine";
 		refListPopup.style.boxShadow = "0 0 10px black";
 		refListPopup.style.borderRadius = "10px";
-		refListPopup.style.position = "absolute";
-		refListPopup.style.top = "50%";
-		refListPopup.style.left = "50%";
+		refListPopup.style.position = "";
 		refListPopup.style.transform = "translate(-50%, -50%)";
 		refListPopup.style.zIndex = 9999;
 		refListPopup.style.padding = "10px";
@@ -147,6 +153,32 @@
 		refListPopup.appendChild(table);
 
 		document.body.appendChild(refListPopup);
+	}
+
+	/**
+	 * Prepares reference data for later download.
+	 * Content script can't download directly, but it can prepare
+	 * the data and send it to the background script so that it
+	 * can download the file
+	 */
+	async function downloadReferences() {
+		// Get references out of localStorage
+		var references = localStorage.getItem(getBaseURI());
+
+		// Construct filename
+		var splitLowercaseURI = getBaseURI().toLowerCase().split("/");
+		var endPart = splitLowercaseURI[splitLowercaseURI.length - 1];
+		var filename = `${endPart}.json`;
+
+		console.log("About to send message to background script!");
+		const type = "downloadMessage";
+		const { response, objectURL } = await browser.runtime.sendMessage({
+			type,
+			data: { references, filename },
+		});
+		console.log("Response was: ", response);
+		// Revoke object URL of file after download completes
+		URL.revokeObjectURL(objectURL);
 	}
 
 	/**
@@ -205,7 +237,7 @@
 		// 		https://stackoverflow.com/a/494348/8782284
 		var div = document.createElement("div");
 		var htmlString =
-			'<div id="ref-select-div" style="display: block"><button id="ref-select-extraction" style="background-color: green; border-radius: 10%">&check;</button><button id="ref-select-expansion" style="background-color: lightskyblue; border-radius: 10%">Expand Selection</button><button id="ref-select-cancel" style="background-color: red; border-radius: 10%">&#10005;</button></div>';
+			'<div id="ref-select-div" style="display: block"><button id="ref-select-extraction" style="background-color: lightgreen; border-radius: 10%">&check;</button><button id="ref-select-expansion" style="background-color: lightskyblue; border-radius: 10%">Expand Selection</button><button id="ref-select-cancel" style="background-color: crimson; border-radius: 10%">&#10005;</button></div>';
 		div.innerHTML = htmlString.trim();
 		var refSelectDiv = div.firstElementChild;
 		element.appendChild(refSelectDiv);
@@ -222,6 +254,7 @@
 				removeStyles(element);
 				removeRefSelectionOptions(element);
 				extractReferencesFromSelection(element);
+				exitSelectionMode();
 			},
 			false
 		);
@@ -252,11 +285,15 @@
 				removeStyles(element);
 				removeRefSelectionOptions(element);
 				prevSelection = null;
-				document.body.style.cursor = "default";
-				document.body.removeEventListener("click", modifySelectedRegionStyles);
+				exitSelectionMode();
 			},
 			false
 		);
+	}
+
+	function exitSelectionMode() {
+		document.body.style.cursor = "default";
+		document.body.removeEventListener("click", modifySelectedRegionStyles);
 	}
 
 	function removeRefSelectionOptions(element) {
@@ -295,6 +332,11 @@
 			extractReferencesFromSelection(null);
 		} else if (message.command === "listRefs") {
 			listReferences();
+		} else if (message.command === "downloadRefs") {
+			downloadReferences();
+			// .then((res) => {
+			// 	console.log("Response was: ", res);
+			// });
 		} else if (message.command === "selectRefs") {
 			selectReferences();
 		}
