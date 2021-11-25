@@ -3,7 +3,7 @@
  * the content script in the page.
  */
 function listenForClicks() {
-	// Start by styling the "Delete References" div appropriately
+	// Start by styling the "Delete References" <div> appropriately
 	// based on the value of the "hidden" key in storage.local for
 	// the currently active tab
 	browser.tabs
@@ -210,7 +210,7 @@ function handleStorageChange(changes, areaName) {
 			}
 		});
 }
-// browser.storage.onChanged.addListener(handleStorageChange);
+browser.storage.onChanged.addListener(handleStorageChange);
 
 /**
  * When the popup loads, inject a content script into the active tab,

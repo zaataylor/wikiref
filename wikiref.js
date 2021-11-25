@@ -231,10 +231,6 @@
 
 	prevSelection = null;
 	function modifySelectedRegionStyles(ev) {
-		console.log(
-			"prevSelection in modifySelectionRegionStyles is:",
-			prevSelection
-		);
 		// Won't always look at the true event.target when
 		// comparing prevSelection to next. Instead, recurse
 		// up, set prevSelection to <li> containing the actual
@@ -330,7 +326,11 @@
 	function exitSelectionMode() {
 		console.log("About to remove event listener from document.body!");
 		document.body.style.cursor = "default";
-		document.body.removeEventListener("click", modifySelectedRegionStyles);
+		document.body.removeEventListener(
+			"click",
+			modifySelectedRegionStyles,
+			true
+		);
 	}
 
 	/**
