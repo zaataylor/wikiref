@@ -36,11 +36,11 @@ function listenForClicks() {
 			});
 		}
 		/**
-		 * Send an "extractRefs" message to the content script in the active tab.
+		 * Send a "displayRefs" message to the content script in the active tab.
 		 */
-		function sendListReferencesMessage(tabs) {
+		function sendDisplayReferencesMessage(tabs) {
 			browser.tabs.sendMessage(tabs[0].id, {
-				command: "listRefs",
+				command: "displayRefs",
 			});
 		}
 
@@ -88,10 +88,10 @@ function listenForClicks() {
 				.query({ active: true, currentWindow: true })
 				.then(sendExtractReferencesMessage)
 				.catch(reportError);
-		} else if (e.target.classList.contains("list-refs")) {
-			browser.tabs
+		} else if (e.target.classList.contains("display-refs")) {
+			bowdisplays
 				.query({ active: true, currentWindow: true })
-				.then(sendListReferencesMessage)
+				.then(sendDisplayReferencesMessage)
 				.catch(reportError);
 		} else if (e.target.classList.contains("download-refs")) {
 			browser.tabs

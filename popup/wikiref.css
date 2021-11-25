@@ -25,11 +25,11 @@ body {
 	font-size: 0.8em;
 }
 
-.list-refs {
+.display-refs {
 	background-color: #fbfbc9;
 }
 
-.list-refs:hover {
+.display-refs:hover {
 	background-color: #eaea9d;
 }
 

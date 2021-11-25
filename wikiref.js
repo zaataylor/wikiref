@@ -11,6 +11,10 @@
 
 	const DOWNLOAD = "downloadMessage";
 
+	/**
+	 * Extracts a reference from a child element.
+	 * This should be an <li>
+	 */
 	function extractReference(child, index) {
 		var ref = {
 			id: index,
@@ -33,6 +37,12 @@
 		return ref;
 	}
 
+	/**
+	 * Extract all the references from a given
+	 * user-provided selection, or try to find
+	 * and extract the location of these
+	 * references if no selection is provided.
+	 */
 	function extractReferencesFromSelection(selection) {
 		var references = [];
 		var startIndex = 0;
@@ -102,11 +112,11 @@
 	}
 
 	/**
-	 * Generates a scrollable popup that lists the references,
+	 * Generates a scrollable popup that displays the references,
 	 * if there are any. Format of the popup is a table, with two columns,
 	 * "Title" and "Links"
 	 */
-	function listReferences() {
+	function displayReferences() {
 		var refString = localStorage.getItem(getBaseURI());
 		var refs = JSON.parse(refString);
 		// Create div to add to document body
@@ -229,6 +239,11 @@
 		document.body.addEventListener("click", modifySelectedRegionStyles, true);
 	}
 
+	/**
+	 * Modifies region selected by a user by highlighting it
+	 * with a lightblue background and a solid black border
+	 * around it.
+	 */
 	prevSelection = null;
 	function modifySelectedRegionStyles(ev) {
 		// Won't always look at the true event.target when
@@ -248,11 +263,20 @@
 		prevSelection = elementContainingTarget;
 	}
 
+	/**
+	 * Highlights element with lightblue background
+	 * and solid black border around it.
+	 */
 	function insertStyles(element) {
 		element.style.backgroundColor = "lightblue";
 		element.style.borderStyle = "solid";
 	}
 
+	/**
+	 * Removes styling from element that was
+	 * previously styled with the selection region
+	 * styling.
+	 */
 	function removeStyles(element) {
 		element.style.backgroundColor = "";
 		element.style.borderStyle = "";
@@ -323,6 +347,11 @@
 		);
 	}
 
+	/**
+	 * Exits selection mode by removing the event listener from
+	 * document.body and switching the style of the cursor back
+	 * to the default style.
+	 */
 	function exitSelectionMode() {
 		console.log("About to remove event listener from document.body!");
 		document.body.style.cursor = "default";
@@ -378,8 +407,8 @@
 		tabURL = getBaseURI();
 		if (message.command === "extractRefs") {
 			extractReferencesFromSelection(null);
-		} else if (message.command === "listRefs") {
-			listReferences();
+		} else if (message.command === "displayRefs") {
+			displayReferences();
 		} else if (message.command === "downloadRefs") {
 			downloadReferences();
 		} else if (message.command === "deleteRefs") {
