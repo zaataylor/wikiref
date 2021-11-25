@@ -3,6 +3,29 @@
  * the content script in the page.
  */
 function listenForClicks() {
+	// Start by styling the "Delete References" div appropriately
+	// based on the value of the "hidden" key in storage.local for
+	// the currently active tab
+	browser.tabs
+		.query({ active: true, currentWindow: true })
+		.then((tabs) => {
+			return getBaseURI(tabs[0].url);
+		})
+		.then((tabURL) => {
+			return browser.storage.local.get(tabURL);
+		})
+		.then((tabData) => {
+			var deleteRefsDiv = document.querySelector(".delete-refs");
+			var tabURL = Object.keys(tabData)[0];
+			if (tabData[tabURL] !== undefined) {
+				if (tabData[tabURL]["hidden"] === true) {
+					deleteRefsDiv.classList.add("hidden");
+				} else {
+					deleteRefsDiv.classList.remove("hidden");
+				}
+			}
+		});
+
 	document.addEventListener("click", (e) => {
 		/**
 		 * Send an "extractRefs" message to the content script in the active tab.
@@ -27,6 +50,15 @@ function listenForClicks() {
 		function sendDownloadReferencesMessage(tabs) {
 			browser.tabs.sendMessage(tabs[0].id, {
 				command: "downloadRefs",
+			});
+		}
+
+		/**
+		 * Send a "deleteRefs" message to the content script in the active tab.
+		 */
+		function sendDeleteReferencesMessage(tabs) {
+			browser.tabs.sendMessage(tabs[0].id, {
+				command: "deleteRefs",
 			});
 		}
 
@@ -66,6 +98,11 @@ function listenForClicks() {
 				.query({ active: true, currentWindow: true })
 				.then(sendDownloadReferencesMessage)
 				.catch(reportError);
+		} else if (e.target.classList.contains("delete-refs")) {
+			browser.tabs
+				.query({ active: true, currentWindow: true })
+				.then(sendDeleteReferencesMessage)
+				.catch(reportError);
 		} else if (e.target.classList.contains("select-refs")) {
 			browser.tabs
 				.query({ active: true, currentWindow: true })
@@ -73,6 +110,14 @@ function listenForClicks() {
 				.catch(reportError);
 		}
 	});
+}
+
+/**
+ * Gets base URI by trimming extra characters that might
+ * indicate an article heading.
+ */
+function getBaseURI(uri) {
+	return uri.split("#")[0];
 }
 
 /**
@@ -114,8 +159,6 @@ function downloadReferences(references, filename) {
 		);
 }
 
-browser.runtime.onMessage.addListener(handleMessage);
-
 function handleMessage(request, sender, sendResponse) {
 	console.log(`Received message from content script! Request was: ${request}`);
 	const { type, data } = request;
@@ -124,8 +167,7 @@ function handleMessage(request, sender, sendResponse) {
 		downloadReferences(references, filename).then(
 			(value) => {
 				var [downloadId, exportURL] = value;
-				console.log(`Value from returned promise was: ${downloadId}`);
-				// Now, revoke the exportURL
+
 				return sendResponse({
 					response: `Success! Download ID was ${downloadId}.`,
 					objectURL: `Export URL was: ${exportURL}`,
@@ -134,16 +176,41 @@ function handleMessage(request, sender, sendResponse) {
 			(error) => {
 				var [reason, exportURL] = error;
 				console.log(`Error was: ${reason}`);
-				// Now, revoke the exportURL
 				return sendResponse({
 					response: `Error! Reason was: ${reason}.`,
 					objectURL: `Export URL was: ${exportURL}`,
 				});
 			}
 		);
-		return true;
 	}
+	return true;
 }
+browser.runtime.onMessage.addListener(handleMessage);
+
+function handleStorageChange(changes, areaName) {
+	console.log("Changes object is: ", changes);
+	browser.tabs
+		.query({ active: true, currentWindow: true })
+		.then((tabs) => {
+			return getBaseURI(tabs[0].url);
+		})
+		.then((tabURL) => {
+			return browser.storage.local.get(tabURL);
+		})
+		.then((tabData) => {
+			var deleteRefsDiv = document.querySelector(".delete-refs");
+			var tabURL = Object.keys(tabData)[0];
+			if (tabData[tabURL] !== undefined) {
+				if (changes["hidden"].newValue === true) {
+					deleteRefsDiv.classList.add("hidden");
+				} else {
+					// <div> should no longer be hidden
+					deleteRefsDiv.classList.remove("hidden");
+				}
+			}
+		});
+}
+// browser.storage.onChanged.addListener(handleStorageChange);
 
 /**
  * When the popup loads, inject a content script into the active tab,

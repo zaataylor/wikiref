@@ -11,7 +11,7 @@ body {
 	margin: 3% auto;
 	padding: 4px;
 	text-align: center;
-	font-size: 1.2em;
+	font-size: 1em;
 	font-family: "Gill Sans", "Gill Sans MT", Calibri, "Trebuchet MS", sans-serif;
 	cursor: pointer;
 }
@@ -47,4 +47,12 @@ body {
 
 .download-refs:hover {
 	background-color: rgba(255, 205, 196, 0.993);
+}
+
+.delete-refs {
+	background-color: rgba(220, 20, 153, 0.507);
+}
+
+.delete-refs:hover {
+	background-color: crimson;
 }

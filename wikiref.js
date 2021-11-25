@@ -9,6 +9,8 @@
 	}
 	window.hasRun = true;
 
+	const DOWNLOAD = "downloadMessage";
+
 	function extractReference(child, index) {
 		var ref = {
 			id: index,
@@ -74,13 +76,28 @@
 
 		localStorage.setItem(getBaseURI(), JSON.stringify(references));
 		console.log("Successfully copied the references! Refs are: ", references);
+		// Update display status of Delete References
+		// option so it'll be visible when references have
+		// been added to localStorage. We'll listen
+		// for the storage.local.onChanged event in the
+		// background script and update styling of the
+		// popup appropriately
+		var deleteRefsHidden = {};
+		deleteRefsHidden[tabURL] = { hidden: false };
+		console.log(
+			`extract references hidden status on tab ${tabURL} has been set to false!`
+		);
+		return browser.storage.local.set(deleteRefsHidden);
 	}
 
 	/**
 	 * Gets base URI by trimming extra characters that might
 	 * indicate an article heading.
 	 */
-	function getBaseURI() {
+	function getBaseURI(uri = null) {
+		if (uri !== null) {
+			return uri.split("#")[0];
+		}
 		return document.baseURI.split("#")[0];
 	}
 
@@ -168,13 +185,33 @@
 		var endPart = splitLowercaseURI[splitLowercaseURI.length - 1];
 		var filename = `${endPart}.json`;
 
-		const type = "downloadMessage";
 		const { response, objectURL } = await browser.runtime.sendMessage({
-			type,
+			type: DOWNLOAD,
 			data: { references, filename },
 		});
+		console.log("downloadReferences: response was: ", response);
 		// Revoke object URL of file after download completes
 		URL.revokeObjectURL(objectURL);
+	}
+
+	/**
+	 * Removes references that are present on the current page
+	 * from localStorage.
+	 */
+	function deleteReferences() {
+		localStorage.removeItem(getBaseURI());
+		// Update display status of Delete References
+		// option so it'll be hidden when references have
+		// been deleted from localStorage. We'll listen
+		// for the storage.local.onChanged event in the
+		// background script and update styling of the
+		// popup appropriately
+		var deleteRefsHidden = {};
+		deleteRefsHidden[tabURL] = { hidden: true };
+		browser.storage.local.set(deleteRefsHidden);
+		console.log(
+			`delete references hidden status on tab ${tabURL} has been set to true!`
+		);
 	}
 
 	/**
@@ -182,6 +219,7 @@
 	 * document body to selection of reference sections.
 	 */
 	function selectReferences() {
+		console.log("Entering selection mode!");
 		// Steps:
 		// 1. Change style of cursor to a pointer
 		document.body.style.cursor = "pointer";
@@ -193,6 +231,10 @@
 
 	prevSelection = null;
 	function modifySelectedRegionStyles(ev) {
+		console.log(
+			"prevSelection in modifySelectionRegionStyles is:",
+			prevSelection
+		);
 		// Won't always look at the true event.target when
 		// comparing prevSelection to next. Instead, recurse
 		// up, set prevSelection to <li> containing the actual
@@ -246,6 +288,7 @@
 				removeStyles(element);
 				removeRefSelectionOptions(element);
 				extractReferencesFromSelection(element);
+				console.log("About to exit selection mode!");
 				exitSelectionMode();
 			},
 			false
@@ -263,8 +306,10 @@
 				var parentElement = expandSelection(element);
 				// Insert selection options underneath this parent element, then...
 				insertRefSelectionOptions(parentElement);
-				// Update prevSelection to be the new parentElement
+				// Update prevSelection to be the new parentElement, and finally...
 				prevSelection = parentElement;
+				// Exit selection mode
+				exitSelectionMode();
 			},
 			true
 		);
@@ -283,6 +328,7 @@
 	}
 
 	function exitSelectionMode() {
+		console.log("About to remove event listener from document.body!");
 		document.body.style.cursor = "default";
 		document.body.removeEventListener("click", modifySelectedRegionStyles);
 	}
@@ -321,17 +367,23 @@
 		}
 	}
 
+	// Tab URL for use with storing in
+	// storage.local with hidden information
+	var tabURL = null;
 	/**
 	 * Listen for messages from the background script and
 	 * call the appropriate functions based on the message.
 	 */
-	browser.runtime.onMessage.addListener((message) => {
+	browser.runtime.onMessage.addListener((message, sender, sendResponse) => {
+		tabURL = getBaseURI();
 		if (message.command === "extractRefs") {
 			extractReferencesFromSelection(null);
 		} else if (message.command === "listRefs") {
 			listReferences();
 		} else if (message.command === "downloadRefs") {
 			downloadReferences();
+		} else if (message.command === "deleteRefs") {
+			deleteReferences();
 		} else if (message.command === "selectRefs") {
 			selectReferences();
 		}
