@@ -112,6 +112,13 @@
 	}
 
 	/**
+	 * Removes the <div> created by "Display References"
+	 */
+	function removeDisplayedReferences(referenceListPopup) {
+		referenceListPopup.parentElement.removeChild(referenceListPopup);
+	}
+
+	/**
 	 * Generates a scrollable popup that displays the references,
 	 * if there are any. Format of the popup is a table, with two columns,
 	 * "Title" and "Links"
@@ -119,10 +126,48 @@
 	function displayReferences() {
 		var refString = localStorage.getItem(getBaseURI());
 		var refs = JSON.parse(refString);
+		// Figure out position to add <div> to document body
+		// We'll add right at the centermost element in the
+		// document so that the user will see it
+		var quarterX = document.documentElement.clientWidth / 4;
+		var centerY = document.documentElement.clientHeight / 2;
+		var centerElement = document.elementFromPoint(quarterX, centerY);
+
+		// Add Font-Awesome styles to document.head for rendering
+		// buttons on the <div>
+		var link = document.createElement("link");
+		link.href =
+			"https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.13.0/css/all.min.css";
+		link.rel = "stylesheet";
+		link.type = "text/css";
+		document.head.appendChild(link);
+
 		// Create div to add to document body
 		var refListPopup = document.createElement("div", {
 			id: "reference-list-popup",
 		});
+
+		// Create <div> for buttons that'll be on the
+		// popup
+		var displayRefOptions = document.createElement("div");
+		displayRefOptions.style.textAlign = "right";
+		var downloadButton = document.createElement("button");
+		downloadButton.innerHTML = '<i class="fa fa-download"></i>';
+		downloadButton.onclick = (ev) => {
+			downloadReferences();
+		};
+		var editButton = document.createElement("button");
+		editButton.innerHTML = '<i class="fa fa-edit"></i>';
+		var closeButton = document.createElement("button");
+		closeButton.innerHTML = '<i class="fa fa-times"></i>';
+		closeButton.onclick = () => {
+			removeDisplayedReferences(refListPopup);
+		};
+		displayRefOptions.appendChild(downloadButton);
+		displayRefOptions.appendChild(editButton);
+		displayRefOptions.appendChild(closeButton);
+		refListPopup.appendChild(displayRefOptions);
+
 		refListPopup.style.width = "80%";
 		refListPopup.style.height = "80%";
 		refListPopup.style.overflow = "hidden";
@@ -131,20 +176,18 @@
 		refListPopup.style.background = "aquamarine";
 		refListPopup.style.boxShadow = "0 0 10px black";
 		refListPopup.style.borderRadius = "10px";
-		refListPopup.style.position = "";
-		refListPopup.style.transform = "translate(-50%, -50%)";
+		refListPopup.style.position = "absolute";
 		refListPopup.style.zIndex = 9999;
 		refListPopup.style.padding = "10px";
 		refListPopup.style.textAlign = "left";
 		refListPopup.style.display = "block";
-
 		var table = document.createElement("table");
 		length = refs.length;
 		for (var i = 0; i < length; i++) {
 			var tr = document.createElement("tr");
 
 			var td1 = document.createElement("td");
-			td1.style.textAlign = "center";
+			td1.style.textAlign = "left";
 			td1.style.fontWeight = "bold";
 			td1.style.fontStyle = "italic";
 
@@ -177,7 +220,7 @@
 		}
 		refListPopup.appendChild(table);
 
-		document.body.appendChild(refListPopup);
+		centerElement.insertBefore(refListPopup, centerElement.firstChild);
 	}
 
 	/**
@@ -252,7 +295,7 @@
 		// event.target, then do comparison and/or highlighting.
 		// This will make it easier to highlight the
 		// entire <ol> or <ul> when/if needed.
-		var elementContainingTarget = findListItem(ev.target);
+		var elementContainingTarget = findParentNode(ev.target, "LI");
 		if (prevSelection != null) {
 			removeStyles(prevSelection);
 			removeRefSelectionOptions(prevSelection);
@@ -384,15 +427,15 @@
 	}
 
 	/**
-	 * Recursively search up parent element tree of a
-	 * given element until a list item element (i.e. an
-	 * element with nodename "LI") is found.
+	 * Recursively search up parent elemnet tree of a
+	 * given element until an element with nodename
+	 * equal to the desired value is found.
 	 */
-	function findListItem(element) {
-		if (element.nodeName === "LI") {
+	function findParentNode(element, nodeName) {
+		if (element.nodeName === nodeName) {
 			return element;
 		} else {
-			return findListItem(element.parentElement);
+			return findParentNode(element.parentElement, nodeName);
 		}
 	}
 

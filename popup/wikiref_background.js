@@ -89,7 +89,7 @@ function listenForClicks() {
 				.then(sendExtractReferencesMessage)
 				.catch(reportError);
 		} else if (e.target.classList.contains("display-refs")) {
-			bowdisplays
+			browser.tabs
 				.query({ active: true, currentWindow: true })
 				.then(sendDisplayReferencesMessage)
 				.catch(reportError);
