@@ -112,6 +112,39 @@
 	}
 
 	/**
+	 * Enables editing of the "Display References" popup by
+	 * inserting an event listener on the <table> element
+	 * contained in the popup <div> that will enable
+	 * selective editing of the items in the table.
+	 */
+	function editReferences() {
+		var refListPopupTable = document.getElementById(
+			"reference-list-popup-table"
+		);
+		refListPopupTable.addEventListener("click", editReferencesHandler);
+	}
+
+	/**
+	 * Handles actual editing of element in table by finding
+	 * it based on where the click event occurred.
+	 */
+	function editReferencesHandler(ev) {
+		// Determine what element the click happened on
+		// using event.clientX and event.clientY
+		var clickedElement = document.elementFromPoint(ev.clientX, ev.clientY);
+
+		// If we selected a <td> element, go down to the first child <p>
+		// element of that <td>
+		if (clickedElement.nodeName === "TD") {
+			clickedElement = clickedElement.firstElementChild;
+		}
+
+		// Save the text of the <p>
+		// Replace the <p> with an <input> temporarily so we can edit
+		// it
+	}
+
+	/**
 	 * Removes the <div> created by "Display References"
 	 */
 	function removeDisplayedReferences(referenceListPopup) {
@@ -153,11 +186,14 @@
 		displayRefOptions.style.textAlign = "right";
 		var downloadButton = document.createElement("button");
 		downloadButton.innerHTML = '<i class="fa fa-download"></i>';
-		downloadButton.onclick = (ev) => {
+		downloadButton.onclick = () => {
 			downloadReferences();
 		};
 		var editButton = document.createElement("button");
 		editButton.innerHTML = '<i class="fa fa-edit"></i>';
+		editButton.onclick = () => {
+			editReferences();
+		};
 		var closeButton = document.createElement("button");
 		closeButton.innerHTML = '<i class="fa fa-times"></i>';
 		closeButton.onclick = () => {
@@ -168,12 +204,10 @@
 		displayRefOptions.appendChild(closeButton);
 		refListPopup.appendChild(displayRefOptions);
 
-		refListPopup.style.width = "80%";
-		refListPopup.style.height = "80%";
 		refListPopup.style.overflow = "hidden";
 		refListPopup.style.overflowY = "auto";
 		refListPopup.style.overflowX = "auto";
-		refListPopup.style.background = "aquamarine";
+		refListPopup.style.background = "aquamarine none repeat scroll";
 		refListPopup.style.boxShadow = "0 0 10px black";
 		refListPopup.style.borderRadius = "10px";
 		refListPopup.style.position = "absolute";
@@ -181,21 +215,24 @@
 		refListPopup.style.padding = "10px";
 		refListPopup.style.textAlign = "left";
 		refListPopup.style.display = "block";
-		var table = document.createElement("table");
+		var table = document.createElement("table", {
+			id: "reference-list-popup-table",
+		});
 		length = refs.length;
 		for (var i = 0; i < length; i++) {
 			var tr = document.createElement("tr");
 
+			// Title formatting
 			var td1 = document.createElement("td");
 			td1.style.textAlign = "left";
 			td1.style.fontWeight = "bold";
 			td1.style.fontStyle = "italic";
-
-			var td2 = document.createElement("td");
-
-			var text1 = document.createTextNode(refs[i].text);
+			var text1 = document.createElement("p");
+			text1.innerText = refs[i].text;
 			var numLinks = refs[i].links.length;
 
+			// Links formatting
+			var td2 = document.createElement("td");
 			var text2 = null;
 			if (numLinks > 0) {
 				for (var j = 0; j < numLinks; j++) {
