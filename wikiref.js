@@ -125,6 +125,51 @@
 	}
 
 	/**
+	 * Handles updating the relevant reference in localStorage
+	 * and <p> element after the user has finished updating the
+	 * <input>.
+	 */
+	function editReferencesInputChangeHandler(
+		referenceId,
+		referenceType,
+		linkNumber,
+		newTextValue
+	) {
+		// Get the reference using the ID and update its text using
+		// the referenceId, then update this in localStorage
+		var references = JSON.parse(localStorage.getItem(getBaseURI()));
+		var refToUpdate = references.filter((ref) => ref.id === referenceId)[0];
+		var refIndex = references.indexOf(refToUpdate);
+		refToUpdate.text = newTextValue;
+		references = references.splice(refIndex, 1, refToUpdate);
+		localStorage.setItem(getBaseURI(), JSON.stringify(references));
+
+		// Find the <p> element and update the text inside of it,
+		// then redisplay it
+		var pElement = null;
+		if (linkNumber !== null) {
+			// Working with a link
+			pElement = document.getElementById(
+				`reference-list-popup-${referenceType}-${referenceId}-${linkNumber}`
+			);
+		} else {
+			pElement = document.getElementById(
+				`reference-list-popup-${referenceType}-${referenceId}`
+			);
+		}
+		pElement.innerText = newTextValue;
+
+		// Remove the <input> element from the DOM, then
+		// redisplay the <p> element
+		var inputElement = document.getElementById(
+			`reference-item-input-${referenceType}-${referenceId}`
+		);
+		inputElement.parentElement.removeChild(inputElement);
+
+		pElement.style.display = "block";
+	}
+
+	/**
 	 * Handles actual editing of element in table by finding
 	 * it based on where the click event occurred.
 	 */
@@ -190,16 +235,17 @@
 		editInput.value = `${referenceText}`;
 		editInput.style.paddingRight = "3px";
 		editInput.style.display = "block";
+		editInput.onchange = (ev) => {
+			editReferencesInputChangeHandler(
+				referenceId,
+				referenceType,
+				linkNumber,
+				ev.target.value
+			);
+		};
 		console.log("Successfully created edit input element!");
 		clickedElement.parentElement.appendChild(editInput);
 		clickedElement.style.display = "none";
-		clickedElement.style.background = "red";
-
-		// When finished editing, propogate the changes
-		// to the <p> element's innerText as well as the
-		// relevant reference in localStorage. Then, remove
-		// the <input> from the document and redisplay the <p>
-		// with display style "block"
 	}
 
 	/**
@@ -313,7 +359,7 @@
 			} else {
 				text2 = document.createElement("p");
 				text2.innerText = "No references! 🥺";
-				text2.id = `reference-list-popup-link-${refs[id].id}-0`;
+				text2.id = `reference-list-popup-link-${refs[i].id}-0`;
 				td2.appendChild(text2);
 			}
 
