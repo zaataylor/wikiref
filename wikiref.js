@@ -111,67 +111,95 @@
 		return document.baseURI.split("#")[0];
 	}
 
+	var editingEnabled = false;
 	/**
 	 * Enables editing of the "Display References" popup by
 	 * inserting an event listener on the <table> element
 	 * contained in the popup <div> that will enable
 	 * selective editing of the items in the table.
 	 */
-	function editReferences() {
+	function enableEditReferences() {
+		if (editingEnabled) {
+			return;
+		}
+		editingEnabled = true;
 		var refListPopupTable = document.getElementById(
 			"reference-list-popup-table"
 		);
-		refListPopupTable.addEventListener("click", editReferencesHandler);
+		refListPopupTable.addEventListener("click", handleRefTableClick);
 	}
 
 	/**
-	 * Handles updating the relevant reference in localStorage
-	 * and <p> element after the user has finished updating the
-	 * <input>.
+	 * Disables editing of the "Display References" popup by
+	 * removing the event listener on the <table> element
+	 * contained in the popup <div> that enabled
+	 * selective editing of the items in the table.
 	 */
-	function editReferencesInputChangeHandler(
-		referenceId,
-		referenceType,
-		linkNumber,
-		newTextValue
-	) {
-		// Get the reference using the ID and update its text using
-		// the referenceId, then update this in localStorage
-		var references = JSON.parse(localStorage.getItem(getBaseURI()));
-		var refToUpdate = references.filter((ref) => ref.id === referenceId)[0];
-		var refIndex = references.indexOf(refToUpdate);
-		refToUpdate.text = newTextValue;
-		references = references.splice(refIndex, 1, refToUpdate);
-		localStorage.setItem(getBaseURI(), JSON.stringify(references));
+	function disableEditReferences() {
+		if (!editingEnabled) {
+			return;
+		}
+		editingEnabled = false;
+		var refListPopupTable = document.getElementById(
+			"reference-list-popup-table"
+		);
+		refListPopupTable.removeEventListener("click", handleRefTableClick);
+	}
 
-		// Find the <p> element and update the text inside of it,
-		// then redisplay it
-		var pElement = null;
-		if (linkNumber !== null) {
-			// Working with a link
-			pElement = document.getElementById(
-				`reference-list-popup-${referenceType}-${referenceId}-${linkNumber}`
-			);
-		} else {
-			pElement = document.getElementById(
-				`reference-list-popup-${referenceType}-${referenceId}`
+	/**
+	 * Handles click events on the "Display References" popup
+	 * table
+	 */
+	function handleRefTableClick(ev) {
+		try {
+			var [editInput, referenceId, referenceType, linkNumber] =
+				editReferencesHandler(ev);
+			console.log("Edit references handler was called successfully!");
+			if (editInput !== null && editInput !== undefined) {
+				console.log(
+					"Edit input was not null or undefined! It was: ",
+					editInput
+				);
+				// Remove the onclick event listener from the table
+				// at this point so that clicking on other inputs
+				// before editing is completed does nothing.
+				disableEditReferences();
+				// Add onchange listener to input for when editing happens
+				editInput.onchange = (event) => {
+					console.log("Now inside editInput change event listener");
+					editReferencesInputChangeHandler(
+						referenceId,
+						referenceType,
+						linkNumber,
+						event.target.value
+					);
+				};
+				console.log("Added 'change' event handler to editInput!");
+				editInput.onblur = () => {
+					console.log("Now inside editInput blur event listener");
+					// Re-enable editing now that the input has been
+					// unfocused, which would happen after editing was
+					// finished
+					setTimeout(() => {}, 500);
+					enableEditReferences();
+				};
+				console.log("Added 'blur' event handler to editInput!");
+			}
+		} catch (error) {
+			console.log(
+				"Error encountered when calling editReferencesHandler()! Error: ",
+				error
 			);
 		}
-		pElement.innerText = newTextValue;
-
-		// Remove the <input> element from the DOM, then
-		// redisplay the <p> element
-		var inputElement = document.getElementById(
-			`reference-item-input-${referenceType}-${referenceId}`
-		);
-		inputElement.parentElement.removeChild(inputElement);
-
-		pElement.style.display = "block";
 	}
 
 	/**
 	 * Handles actual editing of element in table by finding
-	 * it based on where the click event occurred.
+	 * it based on where the click event occurred. Constructs
+	 * a textarea element in place of the clicked element to
+	 * enable editing of the contents, and returns this textarea
+	 * element along with relevant fields needed to find it in
+	 * subsequent function calls
 	 */
 	function editReferencesHandler(ev) {
 		// Determine what element the click happened on
@@ -180,14 +208,15 @@
 		console.log("Clicked element is: ", clickedElement);
 
 		// If we selected a <td> element, go down to the first child <p>
-		// element of that <td>
+		// element of that <td>. Otherise, if we clicked a text area that
+		// was already created for the relevant <p>, we should return early.
 		if (clickedElement.nodeName === "TD") {
 			clickedElement = clickedElement.firstElementChild;
-		} else if (clickedElement.nodeName === "INPUT") {
+		} else if (clickedElement.nodeName === "TEXTAREA") {
 			// we don't want to add more than one input per element
 			// clicked, so return early if the same region is clicked
 			// twice in a row.
-			return;
+			return null;
 		}
 
 		console.log("Now clicked element is: ", clickedElement);
@@ -209,43 +238,102 @@
 			referenceType = null;
 		// Working with a title
 		if (idParts.length === 5) {
-			referenceId = idParts[idParts.length - 1];
+			referenceId = Number.parseInt(idParts[idParts.length - 1]);
 			referenceType = idParts[idParts.length - 2];
 		} else {
 			// Working with a link
 			linkNumber = idParts[idParts.length - 1];
-			referenceId = idParts[idParts.length - 2];
+			referenceId = Number.parseInt(idParts[idParts.length - 2]);
 			referenceType = idParts[idParts.length - 3];
 		}
 		console.log("referenceId is: ", referenceId);
-		// means we've already made an input element
+		// This means we've already created a textarea input element in the
+		// <div> somewhere, and we only want to allow one edit area at a time,
+		// so we'll return early.
 		if (
-			document.getElementById(
-				`reference-item-input-${referenceType}-${referenceId}`
-			) !== null
+			document.querySelectorAll("textarea[id^=reference-item-input-").length > 0
 		) {
-			return;
+			return null;
 		}
-		// Hide the <p> and show an <input> temporarily
-		// so we can edit the <input>
-		var editInput = document.createElement("input");
-		editInput.type = "text";
+		// Hide the <p> and show an <textarea> temporarily
+		// so we can edit the <textarea>
+		var editInput = document.createElement("textarea");
+		editInput.cols = "40";
 		editInput.id = `reference-item-input-${referenceType}-${referenceId}`;
 		editInput.placeholder = `${referenceText}`;
 		editInput.value = `${referenceText}`;
 		editInput.style.paddingRight = "3px";
 		editInput.style.display = "block";
-		editInput.onchange = (ev) => {
-			editReferencesInputChangeHandler(
-				referenceId,
-				referenceType,
-				linkNumber,
-				ev.target.value
-			);
-		};
 		console.log("Successfully created edit input element!");
 		clickedElement.parentElement.appendChild(editInput);
 		clickedElement.style.display = "none";
+		return [editInput, referenceId, referenceType, linkNumber];
+	}
+
+	/**
+	 * Handles updating the relevant reference in localStorage
+	 * and paragraph element after the user has finished updating the
+	 * textarea.
+	 */
+	function editReferencesInputChangeHandler(
+		referenceId,
+		referenceType,
+		linkNumber,
+		newTextValue
+	) {
+		console.log("Now inside editReferencesInputChangeHandler");
+		console.log(
+			"editReferencesInputChangeHandler: referenceID is ",
+			referenceId
+		);
+		console.log(
+			"editReferencesInputChangeHandler: referenceType is ",
+			referenceType
+		);
+		console.log("editReferencesInputChangeHandler: linkNumber is ", linkNumber);
+		console.log(
+			"editReferencesInputChangeHandler: newTextValue is ",
+			newTextValue
+		);
+		// Get the reference using the ID and update its text using
+		// the referenceId, then update this in localStorage
+		var references = JSON.parse(localStorage.getItem(getBaseURI()));
+		console.log("references is: ", references);
+		var matchingRefs = references.filter((ref) => ref["id"] === referenceId);
+		console.log("matchingRefs is: ", matchingRefs);
+		var refToUpdate = matchingRefs[0];
+		console.log("refToUpdate is: ", refToUpdate);
+		var refIndex = references.indexOf(refToUpdate);
+		console.log("refIndex is: ", refIndex);
+		refToUpdate.text = newTextValue;
+		references = references.splice(refIndex, 1, refToUpdate);
+		localStorage.setItem(getBaseURI(), JSON.stringify(references));
+		console.log("Successfully updated the references in localStorage!");
+		// Find the <p> element and update the text inside of it,
+		// then redisplay it
+		var pElement = null;
+		if (linkNumber !== null && linkNumber !== undefined) {
+			// Working with a link
+			pElement = document.getElementById(
+				`reference-list-popup-${referenceType}-${referenceId}-${linkNumber}`
+			);
+		} else {
+			pElement = document.getElementById(
+				`reference-list-popup-${referenceType}-${referenceId}`
+			);
+		}
+		pElement.innerText = newTextValue;
+		console.log("<p> element that was updated is: ", pElement);
+		// Remove the <textarea> element from the DOM, then
+		// redisplay the <p> element
+		var inputElement = document.getElementById(
+			`reference-item-input-${referenceType}-${referenceId}`
+		);
+		console.log("Input element about to be removed is: ", inputElement);
+		inputElement.parentElement.removeChild(inputElement);
+
+		pElement.style.display = "block";
+		console.log("Redisplaying the <p> element now!");
 	}
 
 	/**
@@ -303,7 +391,7 @@
 		var editButton = document.createElement("button");
 		editButton.innerHTML = '<i class="fa fa-edit"></i>';
 		editButton.onclick = () => {
-			editReferences();
+			enableEditReferences();
 		};
 		var closeButton = document.createElement("button");
 		closeButton.innerHTML = '<i class="fa fa-times"></i>';
