@@ -132,16 +132,74 @@
 		// Determine what element the click happened on
 		// using event.clientX and event.clientY
 		var clickedElement = document.elementFromPoint(ev.clientX, ev.clientY);
+		console.log("Clicked element is: ", clickedElement);
 
 		// If we selected a <td> element, go down to the first child <p>
 		// element of that <td>
 		if (clickedElement.nodeName === "TD") {
 			clickedElement = clickedElement.firstElementChild;
+		} else if (clickedElement.nodeName === "INPUT") {
+			// we don't want to add more than one input per element
+			// clicked, so return early if the same region is clicked
+			// twice in a row.
+			return;
 		}
 
+		console.log("Now clicked element is: ", clickedElement);
+
 		// Save the text of the <p>
-		// Replace the <p> with an <input> temporarily so we can edit
-		// it
+		var referenceText = clickedElement.innerText;
+		console.log("Reference text is: ", referenceText);
+
+		// Use the ID of the clicked element in order
+		// to determine the ID of the reference element
+		// in localStorage associated with it. Idea here
+		// is to split the ID on "-" character, then
+		// use the length of the result to determine if we're
+		// working with a title or a link part of the table
+		var idParts = clickedElement.id.split("-");
+		console.log("idParts is: ", idParts);
+		var referenceId,
+			linkNumber,
+			referenceType = null;
+		// Working with a title
+		if (idParts.length === 5) {
+			referenceId = idParts[idParts.length - 1];
+			referenceType = idParts[idParts.length - 2];
+		} else {
+			// Working with a link
+			linkNumber = idParts[idParts.length - 1];
+			referenceId = idParts[idParts.length - 2];
+			referenceType = idParts[idParts.length - 3];
+		}
+		console.log("referenceId is: ", referenceId);
+		// means we've already made an input element
+		if (
+			document.getElementById(
+				`reference-item-input-${referenceType}-${referenceId}`
+			) !== null
+		) {
+			return;
+		}
+		// Hide the <p> and show an <input> temporarily
+		// so we can edit the <input>
+		var editInput = document.createElement("input");
+		editInput.type = "text";
+		editInput.id = `reference-item-input-${referenceType}-${referenceId}`;
+		editInput.placeholder = `${referenceText}`;
+		editInput.value = `${referenceText}`;
+		editInput.style.paddingRight = "3px";
+		editInput.style.display = "block";
+		console.log("Successfully created edit input element!");
+		clickedElement.parentElement.appendChild(editInput);
+		clickedElement.style.display = "none";
+		clickedElement.style.background = "red";
+
+		// When finished editing, propogate the changes
+		// to the <p> element's innerText as well as the
+		// relevant reference in localStorage. Then, remove
+		// the <input> from the document and redisplay the <p>
+		// with display style "block"
 	}
 
 	/**
@@ -165,6 +223,14 @@
 		var quarterX = document.documentElement.clientWidth / 4;
 		var centerY = document.documentElement.clientHeight / 2;
 		var centerElement = document.elementFromPoint(quarterX, centerY);
+		console.log("centerElement is: ", centerElement);
+		// We want to ensure the <div> won't be embedded in an <a> tag
+		var possibleAnchorPredecessor = findParentNode(centerElement, "A");
+		if (possibleAnchorPredecessor !== null) {
+			console.log("<div> would be embedded in an <a> tag!");
+			centerElement = possibleAnchorPredecessor;
+			console.log("centerElement is now: ", centerElement);
+		}
 
 		// Add Font-Awesome styles to document.head for rendering
 		// buttons on the <div>
@@ -180,8 +246,7 @@
 			id: "reference-list-popup",
 		});
 
-		// Create <div> for buttons that'll be on the
-		// popup
+		// Create <div> for buttons that'll be on the popup
 		var displayRefOptions = document.createElement("div");
 		displayRefOptions.style.textAlign = "right";
 		var downloadButton = document.createElement("button");
@@ -215,9 +280,8 @@
 		refListPopup.style.padding = "10px";
 		refListPopup.style.textAlign = "left";
 		refListPopup.style.display = "block";
-		var table = document.createElement("table", {
-			id: "reference-list-popup-table",
-		});
+		var table = document.createElement("table");
+		table.id = "reference-list-popup-table";
 		length = refs.length;
 		for (var i = 0; i < length; i++) {
 			var tr = document.createElement("tr");
@@ -229,6 +293,7 @@
 			td1.style.fontStyle = "italic";
 			var text1 = document.createElement("p");
 			text1.innerText = refs[i].text;
+			text1.id = `reference-list-popup-title-${refs[i].id}`;
 			var numLinks = refs[i].links.length;
 
 			// Links formatting
@@ -238,6 +303,7 @@
 				for (var j = 0; j < numLinks; j++) {
 					text2 = document.createElement("p");
 					text2.innerText = `${j + 1}: `;
+					text2.id = `reference-list-popup-link-${refs[i].id}-${j}`;
 					url = document.createElement("a");
 					url.href = refs[i].links[j];
 					url.innerText = refs[i].links[j];
@@ -245,7 +311,9 @@
 					td2.appendChild(text2);
 				}
 			} else {
-				text2 = document.createTextNode("No references! 🥺");
+				text2 = document.createElement("p");
+				text2.innerText = "No references! 🥺";
+				text2.id = `reference-list-popup-link-${refs[id].id}-0`;
 				td2.appendChild(text2);
 			}
 
@@ -257,7 +325,16 @@
 		}
 		refListPopup.appendChild(table);
 
-		centerElement.insertBefore(refListPopup, centerElement.firstChild);
+		console.log("centerElement's parent is now: ", centerElement.parentElement);
+		if (centerElement.nextElementSibling !== null) {
+			centerElement.parentElement.insertBefore(
+				refListPopup,
+				centerElement.nextElementSibling
+			);
+		} else {
+			centerElement.parentElement.insertBefore(refListPopup, centerElement);
+		}
+		// centerElement.insertBefore(refListPopup, centerElement.firstChild);
 	}
 
 	/**
@@ -469,7 +546,7 @@
 	 * equal to the desired value is found.
 	 */
 	function findParentNode(element, nodeName) {
-		if (element.nodeName === nodeName) {
+		if (element === null || element.nodeName === nodeName) {
 			return element;
 		} else {
 			return findParentNode(element.parentElement, nodeName);
