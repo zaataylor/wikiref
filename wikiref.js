@@ -75,7 +75,6 @@
 			//		localStorage appropriately
 			references.push(extractReference(selection, startIndex));
 		} else if (selection.nodeName === "UL" || selection.nodeName === "OL") {
-			console.log("Selection is of type: ", selection.nodeName);
 			//	3. element.nodeName is "UL" or "OL" -> extract refs from list of refs
 			//		and update localStorage appropriately
 			var children = selection.children;
@@ -87,7 +86,6 @@
 		}
 
 		localStorage.setItem(getBaseURI(), JSON.stringify(references));
-		console.log("Successfully copied the references! Refs are: ", references);
 		// Update display status of Delete References
 		// option so it'll be visible when references have
 		// been added to localStorage. We'll listen
@@ -96,9 +94,7 @@
 		// popup appropriately
 		var deleteRefsHidden = {};
 		deleteRefsHidden[tabURL] = { hidden: false };
-		console.log(
-			`extract references hidden status on tab ${tabURL} has been set to false!`
-		);
+
 		return browser.storage.local.set(deleteRefsHidden);
 	}
 
@@ -172,19 +168,13 @@
 		try {
 			var [editInput, referenceId, referenceType, linkNumber] =
 				editReferencesHandler(ev);
-			console.log("Edit references handler was called successfully!");
 			if (editInput !== null && editInput !== undefined) {
-				console.log(
-					"Edit input was not null or undefined! It was: ",
-					editInput
-				);
 				// Remove the onclick event listener from the table
 				// at this point so that clicking on other inputs
 				// before editing is completed does nothing.
 				disableEditReferences();
 				// Add onchange listener to input for when editing happens
 				editInput.onchange = (event) => {
-					console.log("Now inside editInput change event listener");
 					editReferencesInputChangeHandler(
 						referenceId,
 						referenceType,
@@ -192,9 +182,7 @@
 						event.target.value
 					);
 				};
-				console.log("Added 'change' event handler to editInput!");
 				editInput.onblur = () => {
-					console.log("Now inside editInput blur event listener");
 					// Check for presence of a textarea element, which would
 					// indicate that we clicked on the element, but didn't change
 					// anything before unfocusing it again. Let's remove it.
@@ -216,10 +204,9 @@
 					// finished and/or unedited textarea has been unfocused
 					enableEditReferences();
 				};
-				console.log("Added 'blur' event handler to editInput!");
 			}
 		} catch (error) {
-			console.log(
+			console.error(
 				"Error encountered when calling editReferencesHandler()! Error: ",
 				error
 			);
@@ -273,7 +260,6 @@
 		// Determine what element the click happened on
 		// using event.clientX and event.clientY
 		var clickedElement = document.elementFromPoint(ev.clientX, ev.clientY);
-		console.log("Clicked element is: ", clickedElement);
 
 		// If we selected a <td> element, go down to the first child <p>
 		// element of that <td>. Otherise, if we clicked a text area that
@@ -285,18 +271,10 @@
 			// clicked, so return early if the same region is clicked
 			// twice in a row.
 			return null;
-		} else if (
-			clickedElement.nodeName === "BUTTON" ||
-			clickedElement.nodeName === "I"
-		) {
-			// We clicked on one of the edit, download,
-			// or close buttons
 		}
-		console.log("Now clicked element is: ", clickedElement);
 
 		// Save the text of the <p>
 		var referenceText = clickedElement.innerText;
-		console.log("Reference text is: ", referenceText);
 
 		// Use the ID of the clicked element in order
 		// to determine the ID of the reference element
@@ -305,7 +283,6 @@
 		// use the length of the result to determine if we're
 		// working with a title or a link part of the table
 		var idParts = clickedElement.id.split("-");
-		console.log("idParts is: ", idParts);
 		var referenceId,
 			linkNumber,
 			referenceType = null;
@@ -319,7 +296,6 @@
 			referenceId = Number.parseInt(idParts[idParts.length - 2]);
 			referenceType = idParts[idParts.length - 3];
 		}
-		console.log("referenceId is: ", referenceId);
 		// This means we've already created a textarea input element in the
 		// <div> somewhere, and we only want to allow one edit area at a time,
 		// so we'll return early.
@@ -338,7 +314,6 @@
 		editInput.value = `${referenceText}`;
 		editInput.style.paddingRight = "3px";
 		editInput.style.display = "block";
-		console.log("Successfully created edit input element!");
 		clickedElement.parentElement.appendChild(editInput);
 		clickedElement.style.display = "none";
 		return [editInput, referenceId, referenceType, linkNumber];
@@ -355,30 +330,12 @@
 		linkNumber,
 		newTextValue
 	) {
-		console.log("Now inside editReferencesInputChangeHandler");
-		console.log(
-			"editReferencesInputChangeHandler: referenceID is ",
-			referenceId
-		);
-		console.log(
-			"editReferencesInputChangeHandler: referenceType is ",
-			referenceType
-		);
-		console.log("editReferencesInputChangeHandler: linkNumber is ", linkNumber);
-		console.log(
-			"editReferencesInputChangeHandler: newTextValue is ",
-			newTextValue
-		);
 		// Get the reference using the ID and update its text using
 		// the referenceId, then update this in localStorage
 		var references = JSON.parse(localStorage.getItem(getBaseURI()));
-		console.log("references is: ", references);
 		var matchingRefs = references.filter((ref) => ref["id"] === referenceId);
-		console.log("matchingRefs is: ", matchingRefs);
 		var refToUpdate = matchingRefs[0];
-		console.log("refToUpdate is: ", refToUpdate);
 		var refIndex = references.indexOf(refToUpdate);
-		console.log("refIndex is: ", refIndex);
 		if (referenceType === "title") {
 			// Update title
 			refToUpdate.text = newTextValue;
@@ -388,7 +345,6 @@
 		}
 		// references = references.splice(refIndex, 1, refToUpdate);
 		localStorage.setItem(getBaseURI(), JSON.stringify(references));
-		console.log("Successfully updated the references in localStorage!");
 		// Find the <p> element and update the text inside of it,
 		// then redisplay it
 		var pElement = null;
@@ -403,17 +359,14 @@
 			);
 		}
 		pElement.innerText = newTextValue;
-		console.log("<p> element that was updated is: ", pElement);
 		// Remove the <textarea> element from the DOM, then
 		// redisplay the <p> element
 		var inputElement = document.getElementById(
 			`reference-item-input-${referenceType}-${referenceId}`
 		);
-		console.log("Input element about to be removed is: ", inputElement);
 		inputElement.parentElement.removeChild(inputElement);
 
 		pElement.style.display = "block";
-		console.log("Redisplaying the <p> element now!");
 	}
 
 	/**
@@ -437,13 +390,10 @@
 		var quarterX = document.documentElement.clientWidth / 4;
 		var centerY = document.documentElement.clientHeight / 2;
 		var centerElement = document.elementFromPoint(quarterX, centerY);
-		console.log("centerElement is: ", centerElement);
 		// We want to ensure the <div> won't be embedded in an <a> tag
 		var possibleAnchorPredecessor = findParentNode(centerElement, "A");
 		if (possibleAnchorPredecessor !== null) {
-			console.log("<div> would be embedded in an <a> tag!");
 			centerElement = possibleAnchorPredecessor;
-			console.log("centerElement is now: ", centerElement);
 		}
 
 		// Add Font-Awesome styles to document.head for rendering
@@ -466,7 +416,6 @@
 		var downloadButton = document.createElement("button");
 		downloadButton.innerHTML = '<i class="fa fa-download"></i>';
 		downloadButton.onclick = () => {
-			console.log("download references was clicked in editRefs popup!");
 			disableEditReferences();
 			downloadReferences();
 		};
@@ -543,7 +492,6 @@
 		}
 		refListPopup.appendChild(table);
 
-		console.log("centerElement's parent is now: ", centerElement.parentElement);
 		if (centerElement.nextElementSibling !== null) {
 			centerElement.parentElement.insertBefore(
 				refListPopup,
@@ -552,7 +500,6 @@
 		} else {
 			centerElement.parentElement.insertBefore(refListPopup, centerElement);
 		}
-		// centerElement.insertBefore(refListPopup, centerElement.firstChild);
 	}
 
 	/**
@@ -574,7 +521,6 @@
 			type: DOWNLOAD,
 			data: { references, filename },
 		});
-		console.log("downloadReferences: response was: ", response);
 		// Revoke object URL of file after download completes
 		URL.revokeObjectURL(objectURL);
 	}
@@ -594,9 +540,6 @@
 		var deleteRefsHidden = {};
 		deleteRefsHidden[tabURL] = { hidden: true };
 		browser.storage.local.set(deleteRefsHidden);
-		console.log(
-			`delete references hidden status on tab ${tabURL} has been set to true!`
-		);
 	}
 
 	/**
@@ -604,7 +547,6 @@
 	 * document body to selection of reference sections.
 	 */
 	function selectReferences() {
-		console.log("Entering selection mode!");
 		// Steps:
 		// 1. Change style of cursor to a pointer
 		document.body.style.cursor = "pointer";
@@ -683,7 +625,6 @@
 				removeStyles(element);
 				removeRefSelectionOptions(element);
 				extractReferencesFromSelection(element);
-				console.log("About to exit selection mode!");
 				exitSelectionMode();
 			},
 			false
@@ -728,7 +669,6 @@
 	 * to the default style.
 	 */
 	function exitSelectionMode() {
-		console.log("About to remove event listener from document.body!");
 		document.body.style.cursor = "default";
 		document.body.removeEventListener(
 			"click",

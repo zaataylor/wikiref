@@ -84,7 +84,7 @@ function listenForClicks() {
 		 * Just log the error to the console.
 		 */
 		function reportError(error) {
-			console.log(`Could not invoke WikiRef: ${error}`);
+			console.error(`Could not invoke WikiRef: ${error}`);
 		}
 
 		/**
@@ -122,7 +122,6 @@ function listenForClicks() {
 }
 
 function handleStorageChange(changes, areaName) {
-	console.log("Changes object is: ", changes);
 	browser.tabs
 		.query({ active: true, currentWindow: true })
 		.then((tabs) => {
@@ -153,7 +152,7 @@ browser.storage.onChanged.addListener(handleStorageChange);
 function reportExecuteScriptError(error) {
 	document.querySelector("#wikiref-options").classList.add("hidden");
 	document.querySelector("#error-content").classList.remove("hidden");
-	console.log(`Failed to execute wikiref content script: ${error.message}`);
+	console.error(`Failed to execute wikiref content script: ${error.message}`);
 }
 
 /**
@@ -165,5 +164,5 @@ browser.tabs
 	.executeScript({ file: "/wikiref.js" })
 	.then(listenForClicks)
 	.catch(reportExecuteScriptError, () => {
-		console.log("The script failed to execute!");
+		console.error("The script failed to execute!");
 	});
