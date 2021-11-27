@@ -177,10 +177,25 @@
 				console.log("Added 'change' event handler to editInput!");
 				editInput.onblur = () => {
 					console.log("Now inside editInput blur event listener");
+					// Check for presence of a textarea element, which would
+					// indicate that we clicked on the element, but didn't change
+					// anything before unfocusing it again. Let's remove it.
+					var inputElement = document.getElementById(
+						getTextareaID(referenceId, referenceType)
+					);
+					if (inputElement !== null) {
+						inputElement.parentElement.removeChild(inputElement);
+						// Redisplay the <p>
+						modifyElementVisibility(
+							referenceId,
+							referenceType,
+							linkNumber,
+							true
+						);
+					}
 					// Re-enable editing now that the input has been
 					// unfocused, which would happen after editing was
-					// finished
-					setTimeout(() => {}, 500);
+					// finished and/or unedited textarea has been unfocused
 					enableEditReferences();
 				};
 				console.log("Added 'blur' event handler to editInput!");
@@ -190,6 +205,41 @@
 				"Error encountered when calling editReferencesHandler()! Error: ",
 				error
 			);
+		}
+	}
+
+	/**
+	 * Constructs textarea element ID using the given
+	 * parameters
+	 */
+	function getTextareaID(referenceId, referenceType) {
+		return `reference-item-input-${referenceType}-${referenceId}`;
+	}
+
+	/**
+	 * Shows or hides an element based on the referenceId, referenceType,
+	 * and linkNumber
+	 */
+	function modifyElementVisibility(
+		referenceId,
+		referenceType,
+		linkNumber,
+		visible
+	) {
+		var element = null;
+		if (linkNumber !== null && linkNumber !== undefined) {
+			element = document.getElementById(
+				`reference-list-popup-${referenceType}-${referenceId}-${linkNumber}`
+			);
+		} else {
+			element = document.getElementById(
+				`reference-list-popup-${referenceType}-${referenceId}`
+			);
+		}
+		if (visible) {
+			element.style.display = "block";
+		} else {
+			element.style.display = "none";
 		}
 	}
 
@@ -213,12 +263,17 @@
 		if (clickedElement.nodeName === "TD") {
 			clickedElement = clickedElement.firstElementChild;
 		} else if (clickedElement.nodeName === "TEXTAREA") {
-			// we don't want to add more than one input per element
+			// We don't want to add more than one input per element
 			// clicked, so return early if the same region is clicked
 			// twice in a row.
 			return null;
+		} else if (
+			clickedElement.nodeName === "BUTTON" ||
+			clickedElement.nodeName === "I"
+		) {
+			// We clicked on one of the edit, download,
+			// or close buttons
 		}
-
 		console.log("Now clicked element is: ", clickedElement);
 
 		// Save the text of the <p>
@@ -305,8 +360,14 @@
 		console.log("refToUpdate is: ", refToUpdate);
 		var refIndex = references.indexOf(refToUpdate);
 		console.log("refIndex is: ", refIndex);
-		refToUpdate.text = newTextValue;
-		references = references.splice(refIndex, 1, refToUpdate);
+		if (referenceType === "title") {
+			// Update title
+			refToUpdate.text = newTextValue;
+		} else {
+			// Update this specific link
+			refToUpdate.links[linkNumber] = newTextValue;
+		}
+		// references = references.splice(refIndex, 1, refToUpdate);
 		localStorage.setItem(getBaseURI(), JSON.stringify(references));
 		console.log("Successfully updated the references in localStorage!");
 		// Find the <p> element and update the text inside of it,
@@ -386,6 +447,8 @@
 		var downloadButton = document.createElement("button");
 		downloadButton.innerHTML = '<i class="fa fa-download"></i>';
 		downloadButton.onclick = () => {
+			console.log("download references was clicked in editRefs popup!");
+			disableEditReferences();
 			downloadReferences();
 		};
 		var editButton = document.createElement("button");
