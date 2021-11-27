@@ -121,10 +121,20 @@
 	 * selective editing of the items in the table.
 	 */
 	function enableEditReferences() {
+		// If we click the "Edit" icon again,
+		// we'll disable editing, which is a
+		// fairly intuitive UX
 		if (editingEnabled) {
+			disableEditReferences();
 			return;
 		}
 		editingEnabled = true;
+		// change styling of edit button and icon to
+		// indicate we're in edit more
+		var editButton = document.getElementById("reference-list-edit-button");
+		editButton.style.background = "black";
+		var editIcon = document.getElementById("reference-list-edit-icon");
+		editIcon.style.color = "white";
 		var refListPopupTable = document.getElementById(
 			"reference-list-popup-table"
 		);
@@ -142,6 +152,12 @@
 			return;
 		}
 		editingEnabled = false;
+		// change styling of edit button and icon to
+		// indicate we're no longer in edit more
+		var editButton = document.getElementById("reference-list-edit-button");
+		editButton.style.background = "";
+		var editIcon = document.getElementById("reference-list-edit-icon");
+		editIcon.style.color = "";
 		var refListPopupTable = document.getElementById(
 			"reference-list-popup-table"
 		);
@@ -455,7 +471,9 @@
 			downloadReferences();
 		};
 		var editButton = document.createElement("button");
-		editButton.innerHTML = '<i class="fa fa-edit"></i>';
+		editButton.id = "reference-list-edit-button";
+		editButton.innerHTML =
+			'<i id="reference-list-edit-icon" class="fa fa-edit"></i>';
 		editButton.onclick = () => {
 			enableEditReferences();
 		};
