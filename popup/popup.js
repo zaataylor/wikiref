@@ -1,6 +1,15 @@
 /**
- * Listen for clicks on the buttons, and send the appropriate message to
- * the content script in the page.
+ * Gets base URI by trimming extra characters that might
+ * indicate an article heading.
+ */
+function getBaseURI(uri) {
+	return uri.split("#")[0];
+}
+
+/**
+ * Listen for clicks on the popup's buttons, and
+ * send the appropriate message to the content
+ * script in the page.
  */
 function listenForClicks() {
 	// Start by styling the "Delete References" <div> appropriately
@@ -112,81 +121,6 @@ function listenForClicks() {
 	});
 }
 
-/**
- * Gets base URI by trimming extra characters that might
- * indicate an article heading.
- */
-function getBaseURI(uri) {
-	return uri.split("#")[0];
-}
-
-/**
- * There was an error executing the script.
- * Display the popup's error message, and hide the normal UI.
- */
-function reportExecuteScriptError(error) {
-	document.querySelector("#wikiref-options").classList.add("hidden");
-	document.querySelector("#error-content").classList.remove("hidden");
-	console.log(`Failed to execute wikiref content script: ${error.message}`);
-}
-
-/**
- * Downloads references locally in the form of a JSON file
- */
-function downloadReferences(references, filename) {
-	console.log("About to download these references! JSON is: ", references);
-
-	// Create file, then object URL, and download using that
-	// object URL
-	var file = new File([references], filename, {
-		type: "application/json",
-	});
-	var exportURL = URL.createObjectURL(file);
-	console.log("Export URL is: ", exportURL);
-	return browser.downloads
-		.download({
-			url: exportURL,
-			filename: filename,
-			saveAs: false,
-		})
-		.then(
-			(downloadId) => {
-				return Promise.resolve([downloadId, exportURL]);
-			},
-			(reason) => {
-				return Promise.reject([reason, exportURL]);
-			}
-		);
-}
-
-function handleMessage(request, sender, sendResponse) {
-	console.log(`Received message from content script! Request was: ${request}`);
-	const { type, data } = request;
-	if (type === "downloadMessage") {
-		const { references, filename } = data;
-		downloadReferences(references, filename).then(
-			(value) => {
-				var [downloadId, exportURL] = value;
-
-				return sendResponse({
-					response: `Success! Download ID was ${downloadId}.`,
-					objectURL: `Export URL was: ${exportURL}`,
-				});
-			},
-			(error) => {
-				var [reason, exportURL] = error;
-				console.log(`Error was: ${reason}`);
-				return sendResponse({
-					response: `Error! Reason was: ${reason}.`,
-					objectURL: `Export URL was: ${exportURL}`,
-				});
-			}
-		);
-	}
-	return true;
-}
-browser.runtime.onMessage.addListener(handleMessage);
-
 function handleStorageChange(changes, areaName) {
 	console.log("Changes object is: ", changes);
 	browser.tabs
@@ -211,6 +145,16 @@ function handleStorageChange(changes, areaName) {
 		});
 }
 browser.storage.onChanged.addListener(handleStorageChange);
+
+/**
+ * There was an error executing the script.
+ * Display the popup's error message, and hide the normal UI.
+ */
+function reportExecuteScriptError(error) {
+	document.querySelector("#wikiref-options").classList.add("hidden");
+	document.querySelector("#error-content").classList.remove("hidden");
+	console.log(`Failed to execute wikiref content script: ${error.message}`);
+}
 
 /**
  * When the popup loads, inject a content script into the active tab,

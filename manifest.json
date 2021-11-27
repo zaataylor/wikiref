@@ -4,7 +4,12 @@
 	"version": "1.0",
 	"description": "Easily save Wikipedia references on the page(s) you visit!",
 	"icons": {
-		"48": "icons/wiki-ref-48.png"
+		"48": "icons/wikiref-48.png"
+	},
+	"background": {
+		"scripts": [
+			"background.js"
+		]
 	},
 	"permissions": [
 		"activeTab",
@@ -13,7 +18,7 @@
 		"storage"
 	],
 	"browser_action": {
-		"default_icon": "icons/wiki-ref-48.png",
+		"default_icon": "icons/wikiref-48.png",
 		"default_title": "WikiRef",
 		"default_popup": "popup/wikiref.html"
 	},

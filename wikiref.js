@@ -10,6 +10,8 @@
 	window.hasRun = true;
 
 	const DOWNLOAD = "downloadMessage";
+	const DEFAULT_TEXTAREA_COLS = 40;
+	const DEFAULT_TEXTAREA_ROWS = 3;
 
 	/**
 	 * Extracts a reference from a child element.
@@ -313,7 +315,8 @@
 		// Hide the <p> and show an <textarea> temporarily
 		// so we can edit the <textarea>
 		var editInput = document.createElement("textarea");
-		editInput.cols = "40";
+		editInput.cols = DEFAULT_TEXTAREA_COLS;
+		editInput.rows = DEFAULT_TEXTAREA_ROWS;
 		editInput.id = `reference-item-input-${referenceType}-${referenceId}`;
 		editInput.placeholder = `${referenceText}`;
 		editInput.value = `${referenceText}`;
