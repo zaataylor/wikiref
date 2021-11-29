@@ -22,9 +22,7 @@ Next, we can scroll down to the "References" or "External Links" sections and cl
 
 Since the item we'll click on is likely a list item of some sort, we can optionally expand our selection to encompass all of the list items contained in the same list as the item that was originally clicked on. This makes extracting an entire section of references from a specific part of the page very easy.
 
-After selecting a reference or section of references, we can extract the text and external links associated with these references by clicking the green check box that appears under the selected items<sup>\*</sup>. If we want to change our current selection instead of capturing the currently selected element(s), we can simply click on the new element we want to select. Alternatively, if we want to exit Select Mode entirely without capturing any references, including those that are currently selected, simply press the red X that appears under the selected element(s). The screen capture below illustrates all of these features in the order: extract references, change selection, and cancel selection.
-
-<sup>\*</sup>_Currently, there is an annoying limitation on Select Mode. After confirming selection of a given item/group of items in the UI, Select Mode is toggled off. I did this because it was easier to implement at the time, but I'm realizing now that users may want to be able to simply enter Select Mode once, confirm selection multiple times, then click somewhere on the extension popup again in order to exit Selection Mode. This may be a future enhancement._
+After selecting a reference or section of references, we can extract the text and external links associated with these references by clicking the green check box that appears under the selected items. If we want to change our current selection instead of capturing the currently selected element(s), we can simply click on the new element we want to select. Alternatively, if we want to exit Select Mode entirely without capturing any references, including those that are currently selected, simply press the red X that appears under the selected element(s). The screen capture below illustrates all of these features in the order: extract references, change selection, and cancel selection.
 
 ## Displaying and Editing Selected References
 
@@ -38,9 +36,7 @@ After you've made all of your edits, you can exit Edit Mode by clicking the penc
 
 ## Deleting References
 
-If you decide you want to start over and delete the references you've previously captured, you can select "Delete References" in the popup UI, which will remove the references from [`localStorage`](https://developer.mozilla.org/en-US/docs/Web/API/Window/localStorage)<sup>\*</sup>.
-
-<sup>\*</sup>_Currently there's a bit of a UI fail when it comes to receiving confirmation of successfully deleting references. Though the extension popup UI contains the "Delete References" option, clicking it will not immediately change the popup UI's appearance or provide any indication of deletion. However, closing the popup by clicking away and opening it again should show a missing "Delete References" button, which is an indication that there are no references currently captured on that page._
+If you decide you want to start over and delete the references you've previously captured, you can select "Delete References" in the popup UI, which will remove the references from [`localStorage`](https://developer.mozilla.org/en-US/docs/Web/API/Window/localStorage).
 
 ## Downloading References
 
