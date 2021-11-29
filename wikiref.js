@@ -642,10 +642,8 @@
 				var parentElement = expandSelection(element);
 				// Insert selection options underneath this parent element, then...
 				insertRefSelectionOptions(parentElement);
-				// Update prevSelection to be the new parentElement, and finally...
+				// Update prevSelection to be the new parentElement
 				prevSelection = parentElement;
-				// Exit selection mode
-				exitSelectionMode();
 			},
 			true
 		);
