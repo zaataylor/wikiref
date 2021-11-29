@@ -10,13 +10,21 @@ Wikiref aims to make the process of extracting these sources for later review or
 
 # How to Use It
 
+We'll illustrate how to use Wikiref by extracting some references from [this](https://en.wikipedia.org/wiki/Dynamic_array) Wikipedia page about dynamic arrays:
+![Dynamic Arrays Image](assets/dynamic-array-page.png)
+
 ## Selecting References
 
-If you're on a Wikipedia page that interests you, you can capture specific references on the page by first clicking the Wikiref popup in the browser toolbar, then entering Select Mode by clicking "Select References". Next, just click on the UI element of interest. The item will be highlighted and encircled by a solid black border to make it clear what is currently selected. Since the item you'll click on is likely a list item of some sort, you can optionally expand your selection to encompass all of the list items contained in the same list as the item that was originally clicked on. This makes extracting an entire section of references from a specific part of the page very easy.
+We can capture specific references on the page by first clicking the Wikiref popup in the browser toolbar, then entering Select Mode by clicking "Select References".
+![Select References Popup](assets/select-refs-popup.png)
 
-After selecting a reference or section of references, you can extract the text and external links associated with these references by clicking the green check box that appears under the selected items<sup>\*</sup>. If you want to change your current selection instead of capturing the currently selected element(s), simply click on the new element you want to select. Alternatively, if you want to exit Select Mode entirely without capturing any references, including those that are currently selected, simply press the red X that appears under the selected element(s).
+Next, we can scroll down to the "References" or "External Links" sections and click on the UI element of interest. The item will be highlighted and encircled by a solid black border to make it clear what is currently selected.
 
-<sup>\*</sup>_Currently, there is a somewhat annoying limitation on Select Mode. After confirming selection of a given item/group of items in the UI, Select Mode is toggled off. I did this because it was easier to implement at the time, but I'm realizing now that users may want to be able to simply enter Select Mode once, confirm selection multiple times, then click somewhere on the extension popup again in order to exit Selection Mode. This may be a future enhancement._
+Since the item we'll click on is likely a list item of some sort, we can optionally expand our selection to encompass all of the list items contained in the same list as the item that was originally clicked on. This makes extracting an entire section of references from a specific part of the page very easy.
+
+After selecting a reference or section of references, we can extract the text and external links associated with these references by clicking the green check box that appears under the selected items<sup>\*</sup>. If we want to change our current selection instead of capturing the currently selected element(s), we can simply click on the new element we want to select. Alternatively, if we want to exit Select Mode entirely without capturing any references, including those that are currently selected, simply press the red X that appears under the selected element(s). The screen capture below illustrates all of these features in the order: extract references, change selection, and cancel selection.
+
+<sup>\*</sup>_Currently, there is an annoying limitation on Select Mode. After confirming selection of a given item/group of items in the UI, Select Mode is toggled off. I did this because it was easier to implement at the time, but I'm realizing now that users may want to be able to simply enter Select Mode once, confirm selection multiple times, then click somewhere on the extension popup again in order to exit Selection Mode. This may be a future enhancement._
 
 ## Displaying and Editing Selected References
 
@@ -42,4 +50,75 @@ This will create a JSON file that is named based on the lowercased version of th
 
 # How It Works
 
-TBD
+## Architecture
+
+Wikiref is comprised of three components, following the pattern used by extensions: background, popup, and content.
+
+### Background
+
+`background.js`: This script contains the logic for actually executing a download of references after receiving a message from the content script. It primarily consists of a `handleMessage` event listener that currently just listens for messages related to downloads, but could easily be extended later on to encompass other kinds of events.
+
+### Popup
+
+`popup.js`: Logic in this script listens for clicks on the extension popup and sends specific messages to the content script running in the active tab of the current window, triggering different extension modes such as Select Mode and Display Mode.
+`popup.css`: Styling for the popup.
+`wikiref.html`: Skeleton of the popup.
+
+### Content
+
+`wikiref.js`: The "brain" behind Wikiref. Contains all of the logic for selecting, extracting, displaying, initiating download of, and editing references.
+
+## References
+
+### Anatomy of a Reference
+
+A reference is represented by a relatively simple data structure. It is a JavaScript object that consists of `text`, `links`, and `id` properties. `text` is a string containing the text of the reference as it appears on the topic page. `links` is an array containing the `href` values of each _external_ link included in the specific reference text; currently internal links aren't captured. `id` is an incrementing integer value that indicates the order in which a reference was extracted.
+
+In the future, I'll probably augment the existing data structure so that it contains a hash of the original contents of the captured reference. This'll make it easier to add in deduplication logic in the case that a user selects the same reference twice.
+
+### Capturing References
+
+The algorithm for capturing references is relatively straightforward. Here's the sequence of steps it follows:
+
+1. User enters Select Mode by clicking "Select References" in the extension popup UI.
+   - This adds a `click` event listener to `document.body` and changes the style of the cursor to `pointer` so it's more intuitive to the user that they can now click on references.
+2. User clicks on a particular reference item.
+   - Internal logic determines what item was clicked using `event.target`, then traverses up the `element.parentElement` lineage for the clicked element until it finds an `<li>`. This parent element is marked as the actual element from which reference information will be extracted. This makes it easy to consistently apply styles to a selected reference regardless of what part of the reference is clicked, since clicks are really "bubbled up" to the parent `<li>` containing the clicked element.
+   - A check is made to see if there was a previously selected element, and if so, any applied styles are removed from the previously selected element.
+   - Styles are applied to the newly selected element to visually indicate it is highlighted. This includes a `<div>` containing action buttons -- &check; for confirm selection, "Expand Selection" for highlighting the entire list the `<li>` is containing in, and &#10005; for cancelling selection -- that's inserted directly under the highlighted `<li>`.
+3. When a user clicks on the green &check; icon -- possibly after having expanded selection to all items in a list by clicking `Expand Selection` in the `<div>` option panel inserted at the end of step #2, it triggers a function that ultimately calls `extractReference(child, index)`, which has a relatively straightforward implementation:
+
+   ```javascript
+   /**
+    * Extracts a reference from a child element.
+    * This should be an <li>
+    */
+   function extractReference(child, index) {
+   	var ref = {
+   		id: index,
+   		text: "",
+   		links: [],
+   	};
+
+   	ref.text = child.innerText;
+   	var a_children = child.getElementsByTagName("a");
+   	for (var k = 0; k < a_children.length; k++) {
+   		// Extract the unique links that are external references only (for now)
+   		if (
+   			a_children[k].classList.contains("external") &&
+   			a_children[k].rel === "nofollow" &&
+   			!ref.links.includes(a_children[k].href)
+   		) {
+   			ref.links.push(a_children[k].href);
+   		}
+   	}
+   	return ref;
+   }
+   ```
+
+4. The captured reference(s) are stored in `localStorage`.
+5. Highlighting is removed from the captured references and the cursor is reverted back to its default appearance to indicate Select Mode is off.
+
+### Storing References
+
+Currently, references captured for a given page are stored using `localStorage`, with the key being equal to a normalized version of `document.baseURI`, and the value being a `JSON.stringify`'d version of a list of reference objects.
