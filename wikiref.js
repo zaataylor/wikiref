@@ -92,10 +92,15 @@
 		// for the storage.local.onChanged event in the
 		// background script and update styling of the
 		// popup appropriately
-		var deleteRefsHidden = {};
-		deleteRefsHidden[tabURL] = { hidden: false };
-
-		return browser.storage.local.set(deleteRefsHidden);
+		var tabURL = getBaseURI();
+		browser.storage.local.get(tabURL).then((results) => {
+			console.log("Results before modification of Select Mode is: ", results);
+			if (results !== undefined) {
+				browser.storage.local.set({
+					[tabURL]: { ...results[tabURL], hidden: false },
+				});
+			}
+		});
 	}
 
 	/**
@@ -537,9 +542,15 @@
 		// for the storage.local.onChanged event in the
 		// background script and update styling of the
 		// popup appropriately
-		var deleteRefsHidden = {};
-		deleteRefsHidden[tabURL] = { hidden: true };
-		browser.storage.local.set(deleteRefsHidden);
+		var tabURL = getBaseURI();
+		browser.storage.local.get(tabURL).then((results) => {
+			console.log("Results before modification of Select Mode is: ", results);
+			if (results !== undefined) {
+				browser.storage.local.set({
+					[tabURL]: { ...results[tabURL], hidden: true },
+				});
+			}
+		});
 	}
 
 	/**
@@ -554,6 +565,30 @@
 		// highlight the underlying DOM elements that point is pointing
 		// to. How? Add click handler to body (to encompass all relevant divs)
 		document.body.addEventListener("click", modifySelectedRegionStyles, true);
+	}
+
+	var inSelectMode = false;
+	/**
+	 * Toggles the status of Select Mode for use by the popup UI.
+	 * Stores an indicator in storage.local to indicate we're in
+	 * Select Mode, but first gets the data that's already there
+	 * (if any) so we don't accidentally overwrite it.
+	 */
+	function toggleSelectMode(status) {
+		var tabURL = getBaseURI();
+		// results looks like this:
+		// { tabURL: { hidden: true} }
+		// After I'm finished, it'll look like:
+		// { tabURL: { hidden: true, selectModeActive: true}}
+		browser.storage.local.get(tabURL).then((results) => {
+			console.log("Results before modification of Select Mode is: ", results);
+			if (results !== undefined) {
+				browser.storage.local.set({
+					[tabURL]: { ...results[tabURL], selectModeActive: status },
+				});
+				inSelectMode = status;
+			}
+		});
 	}
 
 	/**
@@ -625,7 +660,6 @@
 				removeStyles(element);
 				removeRefSelectionOptions(element);
 				extractReferencesFromSelection(element);
-				exitSelectionMode();
 			},
 			false
 		);
@@ -709,15 +743,11 @@
 		}
 	}
 
-	// Tab URL for use with storing in
-	// storage.local with hidden information
-	var tabURL = null;
 	/**
 	 * Listen for messages from the background script and
 	 * call the appropriate functions based on the message.
 	 */
 	browser.runtime.onMessage.addListener((message, sender, sendResponse) => {
-		tabURL = getBaseURI();
 		if (message.command === "extractRefs") {
 			extractReferencesFromSelection(null);
 		} else if (message.command === "displayRefs") {
@@ -727,7 +757,15 @@
 		} else if (message.command === "deleteRefs") {
 			deleteReferences();
 		} else if (message.command === "selectRefs") {
-			selectReferences();
+			// This'll allow us to swap in and out of Select
+			// Mode by reclicking the same icon
+			var currentSelectMode = inSelectMode;
+			toggleSelectMode(!currentSelectMode);
+			if (currentSelectMode) {
+				exitSelectionMode();
+			} else {
+				selectReferences();
+			}
 		}
 	});
 })();

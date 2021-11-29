@@ -12,8 +12,9 @@ function getBaseURI(uri) {
  * script in the page.
  */
 function listenForClicks() {
-	// Start by styling the "Delete References" <div> appropriately
-	// based on the value of the "hidden" key in storage.local for
+	// Start by styling the "Select References" and
+	// "Delete References" <div>s appropriately
+	// based on the value of keys in storage.local for
 	// the currently active tab
 	browser.tabs
 		.query({ active: true, currentWindow: true })
@@ -24,13 +25,40 @@ function listenForClicks() {
 			return browser.storage.local.get(tabURL);
 		})
 		.then((tabData) => {
-			var deleteRefsDiv = document.querySelector(".delete-refs");
 			var tabURL = Object.keys(tabData)[0];
 			if (tabData[tabURL] !== undefined) {
-				if (tabData[tabURL]["hidden"] === true) {
-					deleteRefsDiv.classList.add("hidden");
-				} else {
-					deleteRefsDiv.classList.remove("hidden");
+				// Check for status of Select Mode variable
+				if (tabData[tabURL]["selectModeActive"] !== undefined) {
+					var selectRefsDivs = document.querySelector(".select-refs");
+					if (tabData[tabURL]["selectModeActive"] === true) {
+						console.log(
+							"selectModeActive is: ",
+							tabData[tabURL]["selectModeActive"]
+						);
+
+						selectRefsDivs.innerText = "In Select Mode";
+					} else {
+						console.log(
+							"selectModeActive innerText is: ",
+							tabData[tabURL]["selectModeActive"]
+						);
+						selectRefsDivs.innerText = "Select References";
+					}
+					console.log(
+						"selectRefsDivs innerText is: ",
+						selectRefsDivs.innerText
+					);
+				}
+
+				// Check for status of Delete References variable
+				if (tabData[tabURL]["hidden"] !== undefined) {
+					var deleteRefsDiv = document.querySelector(".delete-refs");
+					if (tabData[tabURL]["hidden"] === true) {
+						deleteRefsDiv.classList.add("hidden");
+					} else {
+						// <div> should no longer be hidden
+						deleteRefsDiv.classList.remove("hidden");
+					}
 				}
 			}
 		});
@@ -131,10 +159,22 @@ function handleStorageChange(changes, areaName) {
 			return browser.storage.local.get(tabURL);
 		})
 		.then((tabData) => {
-			var deleteRefsDiv = document.querySelector(".delete-refs");
+			console.log("Changes object is: ", changes);
 			var tabURL = Object.keys(tabData)[0];
+			var tabChanges = changes[tabURL];
+			console.log("Changes on this tab are: ", tabChanges);
 			if (tabData[tabURL] !== undefined) {
-				if (changes["hidden"].newValue === true) {
+				// Check for changes to Select Mode status
+				var selectRefsDivs = document.querySelector(".select-refs");
+				if (tabChanges.newValue["selectModeActive"] === true) {
+					selectRefsDivs.innerText = "In Select Mode";
+				} else {
+					selectRefsDivs.innerText = "Select References";
+				}
+
+				// Check for changes to Delete References action
+				var deleteRefsDiv = document.querySelector(".delete-refs");
+				if (tabChanges.newValue["hidden"] === true) {
 					deleteRefsDiv.classList.add("hidden");
 				} else {
 					// <div> should no longer be hidden
