@@ -1,12 +1,4 @@
 /**
- * Gets base URI by trimming extra characters that might
- * indicate an article heading.
- */
-function getBaseURI(uri) {
-	return uri.split("#")[0];
-}
-
-/**
  * Downloads references locally in the form of a JSON file
  */
 function downloadReferences(references, filename) {
