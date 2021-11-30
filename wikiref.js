@@ -17,14 +17,18 @@
 	 * Extracts a reference from a child element.
 	 * This should be an <li>
 	 */
-	function extractReference(child, index) {
+	async function extractReference(child, index) {
 		var ref = {
 			id: index,
+			hash: "",
 			text: "",
 			links: [],
 		};
 
 		ref.text = child.innerText;
+		// Hash based on current document and text of reference.
+		ref.hash = await digestMessage(`${getBaseURI()}|${ref.text}`);
+
 		var a_children = child.getElementsByTagName("a");
 		for (var k = 0; k < a_children.length; k++) {
 			// Extract the unique links that are external references only (for now)
@@ -38,6 +42,19 @@
 		}
 		return ref;
 	}
+	/*
+	 * From here:
+	 * https://developer.mozilla.org/en-US/docs/Web/API/SubtleCrypto/digest
+	 */
+	async function digestMessage(message) {
+		const msgUint8 = new TextEncoder().encode(message); // encode as (utf-8) Uint8Array
+		const hashBuffer = await crypto.subtle.digest("SHA-1", msgUint8); // hash the message
+		const hashArray = Array.from(new Uint8Array(hashBuffer)); // convert buffer to byte array
+		const hashHex = hashArray
+			.map((byte) => byte.toString(16).padStart(2, "0"))
+			.join(""); // convert bytes to hex string
+		return hashHex;
+	}
 
 	/**
 	 * Extract all the references from a given
@@ -45,7 +62,7 @@
 	 * and extract the location of these
 	 * references if no selection is provided.
 	 */
-	function extractReferencesFromSelection(selection) {
+	async function extractReferencesFromSelection(selection) {
 		var references = [];
 		var startIndex = 0;
 		// Seeing what's already in localStorage, if
@@ -67,20 +84,28 @@
 			var children = referenceList.children;
 			if (children.length > 0) {
 				for (var i = 0; i < children.length; i++) {
-					references.push(extractReference(children[i], i + startIndex));
+					references.push(await extractReference(children[i], i + startIndex));
 				}
 			}
 		} else if (selection.nodeName === "LI") {
-			//	2. element.nodeName is "LI" -> extract refs from list item and update
-			//		localStorage appropriately
-			references.push(extractReference(selection, startIndex));
+			//	2. element.nodeName is "LI" -> extract refs from list item
+			var ref = await extractReference(selection, startIndex);
+			// Not a duplicate
+			var matchingRefs = references.filter((r) => r.hash === ref.hash);
+			if (matchingRefs.length === 0) {
+				references.push(ref);
+			}
 		} else if (selection.nodeName === "UL" || selection.nodeName === "OL") {
-			//	3. element.nodeName is "UL" or "OL" -> extract refs from list of refs
-			//		and update localStorage appropriately
+			//	3. element.nodeName is "UL" or "OL" -> extract refs from list
 			var children = selection.children;
 			if (children.length > 0) {
 				for (var i = 0; i < children.length; i++) {
-					references.push(extractReference(children[i], i + startIndex));
+					var ref = await extractReference(children[i], i + startIndex);
+					// Not a duplicate
+					var matchingRefs = references.filter((r) => r.hash === ref.hash);
+					if (matchingRefs.length === 0) {
+						references.push(ref);
+					}
 				}
 			}
 		}
@@ -94,7 +119,6 @@
 		// popup appropriately
 		var tabURL = getBaseURI();
 		browser.storage.local.get(tabURL).then((results) => {
-			console.log("Results before modification of Select Mode is: ", results);
 			if (results !== undefined) {
 				browser.storage.local.set({
 					[tabURL]: { ...results[tabURL], hidden: false },
@@ -544,7 +568,6 @@
 		// popup appropriately
 		var tabURL = getBaseURI();
 		browser.storage.local.get(tabURL).then((results) => {
-			console.log("Results before modification of Select Mode is: ", results);
 			if (results !== undefined) {
 				browser.storage.local.set({
 					[tabURL]: { ...results[tabURL], hidden: true },
@@ -576,12 +599,7 @@
 	 */
 	function toggleSelectMode(status) {
 		var tabURL = getBaseURI();
-		// results looks like this:
-		// { tabURL: { hidden: true} }
-		// After I'm finished, it'll look like:
-		// { tabURL: { hidden: true, selectModeActive: true}}
 		browser.storage.local.get(tabURL).then((results) => {
-			console.log("Results before modification of Select Mode is: ", results);
 			if (results !== undefined) {
 				browser.storage.local.set({
 					[tabURL]: { ...results[tabURL], selectModeActive: status },
