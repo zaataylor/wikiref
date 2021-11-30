@@ -30,14 +30,15 @@ function listenForClicks() {
 				// Check for status of Select Mode variable
 				if (tabData[tabURL]["selectModeActive"] !== undefined) {
 					var selectRefsDivs = document.querySelector(".select-refs");
-					if (tabData[tabURL]["selectModeActive"] === true) {
+					var selectModeActive = tabData[tabURL]["selectModeActive"];
+					if (selectModeActive === true) {
 						console.log(
 							"selectModeActive is: ",
 							tabData[tabURL]["selectModeActive"]
 						);
 
 						selectRefsDivs.innerText = "In Select Mode";
-					} else {
+					} else if (selectModeActive === false) {
 						console.log(
 							"selectModeActive innerText is: ",
 							tabData[tabURL]["selectModeActive"]
@@ -53,9 +54,10 @@ function listenForClicks() {
 				// Check for status of Delete References variable
 				if (tabData[tabURL]["hidden"] !== undefined) {
 					var deleteRefsDiv = document.querySelector(".delete-refs");
-					if (tabData[tabURL]["hidden"] === true) {
+					var hidden = tabData[tabURL]["hidden"];
+					if (hidden === true) {
 						deleteRefsDiv.classList.add("hidden");
-					} else {
+					} else if (hidden === false) {
 						// <div> should no longer be hidden
 						deleteRefsDiv.classList.remove("hidden");
 					}
@@ -166,17 +168,19 @@ function handleStorageChange(changes, areaName) {
 			if (tabData[tabURL] !== undefined) {
 				// Check for changes to Select Mode status
 				var selectRefsDivs = document.querySelector(".select-refs");
-				if (tabChanges.newValue["selectModeActive"] === true) {
+				var selectModeActive = tabChanges.newValue["selectModeActive"];
+				if (selectModeActive === true) {
 					selectRefsDivs.innerText = "In Select Mode";
-				} else {
+				} else if (selectModeActive === false) {
 					selectRefsDivs.innerText = "Select References";
 				}
 
 				// Check for changes to Delete References action
 				var deleteRefsDiv = document.querySelector(".delete-refs");
-				if (tabChanges.newValue["hidden"] === true) {
+				var hidden = tabChanges.newValue["hidden"];
+				if (hidden === true) {
 					deleteRefsDiv.classList.add("hidden");
-				} else {
+				} else if (hidden === false) {
 					// <div> should no longer be hidden
 					deleteRefsDiv.classList.remove("hidden");
 				}
