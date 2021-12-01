@@ -2,6 +2,21 @@ html,
 body {
 	width: 200px;
 }
+#wikiref-body {
+	background-color: lightskyblue;
+}
+
+#wikiref-title {
+	text-align: center;
+	margin: 3% auto;
+	padding: 4px;
+	font-size: 1.5em;
+	font-family: "Gill Sans", "Gill Sans MT", Calibri, "Trebuchet MS", sans-serif;
+}
+
+.default-border {
+	border: solid black;
+}
 
 .hidden {
 	display: none;

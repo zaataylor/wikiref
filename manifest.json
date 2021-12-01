@@ -1,6 +1,6 @@
 {
 	"manifest_version": 2,
-	"name": "WikiRef",
+	"name": "Wikiref",
 	"version": "1.0",
 	"description": "Easily save Wikipedia references on the page(s) you visit!",
 	"icons": {
@@ -19,7 +19,7 @@
 	],
 	"browser_action": {
 		"default_icon": "icons/wikiref-48.png",
-		"default_title": "WikiRef",
+		"default_title": "Wikiref",
 		"default_popup": "popup/wikiref.html"
 	},
 	"content_scripts": [
