@@ -595,9 +595,22 @@
 	 * Toggles the status of Select Mode for use by the popup UI.
 	 * Stores an indicator in storage.local to indicate we're in
 	 * Select Mode, but first gets the data that's already there
-	 * (if any) so we don't accidentally overwrite it.
+	 * (if any) so we don't accidentally overwrite it. Also removes
+	 * any highlighted references in the case we're going from
+	 * active Select Mode to inactive.
 	 */
 	function toggleSelectMode(status) {
+		// We're switching to inactive mode, so
+		// remove any highlighted references. We
+		// can do this by checking value of
+		// prevSeleection. We also set it to null.
+		if (!status) {
+			console.log("prevSelection is: ", prevSelection);
+			removeStyles(prevSelection);
+			removeRefSelectionOptions(prevSelection);
+			prevSelection = null;
+		}
+
 		var tabURL = getBaseURI();
 		browser.storage.local.get(tabURL).then((results) => {
 			if (results !== undefined) {
