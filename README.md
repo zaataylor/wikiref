@@ -37,18 +37,24 @@ Currently, Wikiref is not in the Firefox Add-ons store, so you can only add it a
 # How to Use It
 
 We'll illustrate how to use Wikiref by extracting some references from [this](https://en.wikipedia.org/wiki/Dynamic_array) Wikipedia page about dynamic arrays:
-![Dynamic Arrays Image](assets/dynamic-array-page.png)
+![Dynamic Arrays Image](https://user-images.githubusercontent.com/40524990/144168102-294128c1-0359-40ed-a513-a8bdd1056b66.png)
 
 ## Selecting References
 
 We can capture specific references on the page by first clicking the Wikiref popup in the browser toolbar, then entering Select Mode by clicking "Select References".
-![Select References Popup](assets/select-refs-popup.png)
+![Select References Popup](https://user-images.githubusercontent.com/40524990/144168185-388c6cdf-ab11-497f-8c14-ebb2f3edcb3b.png)
 
 Next, we can scroll down to the "References" or "External Links" sections and click on the UI element of interest. The item will be highlighted and encircled by a solid black border to make it clear what is currently selected.
 
+![Select References Example](https://user-images.githubusercontent.com/40524990/144171352-698b8a7c-f4be-4dda-9287-4c8951775770.gif)
+
 Since the item we'll click on is likely a list item of some sort, we can optionally expand our selection to encompass all of the list items contained in the same list as the item that was originally clicked on. This makes extracting an entire section of references from a specific part of the page very easy.
 
-After selecting a reference or section of references, we can extract the text and external links associated with these references by clicking the green check box that appears under the selected items. If we want to change our current selection instead of capturing the currently selected element(s), we can simply click on the new element we want to select. Alternatively, if we want to exit Select Mode entirely without capturing any references, including those that are currently selected, simply press the red X that appears under the selected element(s). The screen capture below illustrates all of these features in the order: extract references, change selection, and cancel selection.
+![Expand References Example](https://user-images.githubusercontent.com/40524990/144171405-5975f466-a157-4db9-b60b-a64201fd93ff.gif)
+
+After selecting a reference or section of references, we can extract the text and external links associated with these references by clicking the green check box that appears under the selected items. If we want to change our current selection instead of capturing the currently selected element(s), we can simply click on the new element we want to select. Alternatively, if we want to deselect the currently selected references, we can simply press the red &#10005; that appears under the selected element(s). The screen capture below illustrates all of these features in the order: extract references, change selection, and cancel selection.
+
+![Extract, Change Selection, Cancel Selection Example](https://user-images.githubusercontent.com/40524990/144171434-2180910e-9395-4b28-a24a-89c48f1b51f9.gif)
 
 ## Displaying and Editing Selected References
 
@@ -60,15 +66,21 @@ To edit references in Display Mode, click the pencil icon in the top right of th
 
 After you've made all of your edits, you can exit Edit Mode by clicking the pencil icon again, which should revert the icon's appearance to its original form. From here, you can either download the edited references as JSON by clicking the export icon to the left of the pencil icon, or exit Display Mode entirely by clicking the X icon to the right of the pencil icon.
 
+![Displaying and Editing Selected References Example](https://user-images.githubusercontent.com/40524990/144171520-7faceea2-6e76-4d58-b588-0cc95e81ccc0.gif)
+
 ## Deleting References
 
 If you decide you want to start over and delete the references you've previously captured, you can select "Delete References" in the popup UI, which will remove the references from [`localStorage`](https://developer.mozilla.org/en-US/docs/Web/API/Window/localStorage).
+
+![Delete References Example](https://user-images.githubusercontent.com/40524990/144171974-36d5cbda-eb91-40b6-bb3b-645ea429951b.gif)
 
 ## Downloading References
 
 If you're satisfied with the references you've currently captured/edited and want to download these references (text and any external links) as JSON, you can do so simply by clicking "Download References" in the popup UI.
 
 This will create a JSON file that is named based on the lowercased version of the last portion (splitting based on `/` and ignoring document sections indicated by `#`) of the `document.baseURI` of the current page. For instance, if the current page (and section) you've navigated to and captured references on is [`https://en.wikipedia.org/wiki/Hard_disk_drive#References`](https://en.wikipedia.org/wiki/Hard_disk_drive#References), downloading the references will generate `hard_disk_drive.json`.
+
+![Download References Example](https://user-images.githubusercontent.com/40524990/144171621-f88ad75c-c54c-40b5-9c9e-8e3b2d503adf.gif)
 
 # How It Works
 
@@ -107,7 +119,7 @@ The algorithm for capturing references is relatively straightforward. Here's the
 2. User clicks on a particular reference item.
    - Internal logic determines what item was clicked using `event.target`, then traverses up the `element.parentElement` lineage for the clicked element until it finds an `<li>`. This parent element is marked as the actual element from which reference information will be extracted. This makes it easy to consistently apply styles to a selected reference regardless of what part of the reference is clicked, since clicks are really "bubbled up" to the parent `<li>` containing the clicked element.
    - A check is made to see if there was a previously selected element, and if so, any applied styles are removed from the previously selected element.
-   - Styles are applied to the newly selected element to visually indicate it is highlighted. This includes a `<div>` containing action buttons -- &check; for confirm selection, "Expand Selection" for highlighting the entire list the `<li>` is containing in, and &#10005; for cancelling selection -- that's inserted directly under the highlighted `<li>`.
+   - Styles are applied to the newly selected element to visually indicate it is highlighted. This includes a `<div>` containing action buttons -- &check; for confirm selection, "Expand Selection" for highlighting the entire list the `<li>` is contained in, and &#10005; for cancelling selection -- that's inserted directly under the highlighted `<li>`.
 3. When a user clicks on the green &check; icon -- possibly after having expanded selection to all items in a list by clicking `Expand Selection` in the `<div>` option panel inserted at the end of step #2, it triggers a function that ultimately calls `extractReference(child, index)`, which has a relatively straightforward implementation:
 
    ```javascript
@@ -143,7 +155,7 @@ The algorithm for capturing references is relatively straightforward. Here's the
    ```
 
 4. The captured reference(s) are stored in `localStorage`.
-5. Highlighting is removed from the captured references and the cursor is reverted back to its default appearance to indicate Select Mode is off.
+5. Highlighting is removed from the captured references.
 
 ### Storing References
 
