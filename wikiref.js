@@ -720,7 +720,6 @@
 			(ev) => {
 				removeStyles(element);
 				removeRefSelectionOptions(element);
-				exitSelectionMode();
 			},
 			false
 		);
