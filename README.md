@@ -4,9 +4,9 @@
 
 # Description
 
-Wikipedia, the world's online encyclopedia, is a useful, curated source of information. Often, however, it's said that one of the most value parts of any given Wikipedia article are not the user-contributed topic explanations, but the references and external links from which those explanations are based.
+Wikipedia, the world's online encyclopedia, is a useful, volunteer-curated source of information. Often it's said that the most valuable parts of a given Wikipedia article are not the user-contributed topic explanations, but the references from which those explanations are based.
 
-Wikiref aims to make the process of extracting these sources for later review or analysis dead simple. It operates as a Firefox (and soon to be Chrome!) browser extension that is only active when you're on a Wikipedia page.
+Wikiref aims to make the process of extracting these references for later review or analysis dead simple. It operates as a Firefox (and soon to be Chrome!) browser extension that is only active when you're on a Wikipedia page.
 
 - [Installation](#installation)
 - [How to Use It](#how-to-use-it)
@@ -25,7 +25,7 @@ Wikiref aims to make the process of extracting these sources for later review or
 
 # Installation
 
-Currently, Wikiref is not in the Firefox Add-ons store, so you can only add it as a temporary add-on. I do plan to apply to get this put on the extension store, but in the meantime, here are instructions for adding it as a temporary add-on in Firefox:
+Currently, Wikiref is not in the Firefox Add-ons store, so you can only add it as a temporary add-on. I plan to apply to get this listed the extension store, but in the meantime, here are instructions for installing it as a temporary add-on in Firefox:
 
 1. Clone the repo: `git clone https://github.com/zaataylor/wikiref.git`
 2. Navigate to `about:debugging`
@@ -58,27 +58,27 @@ After selecting a reference or section of references, we can extract the text an
 
 ## Displaying and Editing Selected References
 
-If you've captured a set of references and want to see what they look like in tabular form, along with any external links they contain, you can enter Display Mode. This will insert a `<div>` element near the middle of the window containing a table, where items in the first column of the table are the reference text and numbered items in the second column are the external links associated with that reference text.
+If we've captured a set of references and want to see what they look like in tabular form, along with any external links they contain, we can enter Display Mode. This will insert a `<div>` element near the middle of the window containing a table, where items in the first column of the table are the reference text and numbered items in the second column are the external links associated with that reference text.
 
-Since the reference titles are pulled directly from the HTML of the page, you may notice that some titles include Wikipedia page navigation indicators such as "^", or increasing character sequences like "a b c" that indicate multiple citations of a particular reference. This can be annoying if you're just trying to capture the actual reference's text, which is why Display Mode also enables you to edit the text of references.
+Since the reference titles are pulled directly from the HTML of the page, we may notice that some titles include Wikipedia page navigation indicators such as "^", or increasing character sequences like "a b c" that indicate multiple citations of a particular reference. This can be annoying if we're just trying to capture the actual reference's text, which is why Display Mode also enables us to edit the text of references.
 
-To edit references in Display Mode, click the pencil icon in the top right of the `<div>`. This icon will become highlighted, indicating that you're in Edit Mode. From here, you can click on one reference at a time, edit the text as needed, then click away from it or press the `tab` character to finalize the edit. I am _not_ a skilled web developer, and the Edit Mode view may not be the most visually appealing or well-designed user experience. I consider it a work in progress, and I welcome user feedback to help make it better!
+To edit references in Display Mode, click the pencil icon in the top right of the `<div>`. This icon will become highlighted, indicating that we're in Edit Mode. From here, we can click on one reference at a time, edit the text as needed, then click away from it or press the `tab` character to finalize the edit. I am _not_ a skilled web developer, and the Edit Mode view may not be the most visually appealing or well-designed user experience. I consider it a work in progress, and I welcome user feedback to help make it better!
 
-After you've made all of your edits, you can exit Edit Mode by clicking the pencil icon again, which should revert the icon's appearance to its original form. From here, you can either download the edited references as JSON by clicking the export icon to the left of the pencil icon, or exit Display Mode entirely by clicking the X icon to the right of the pencil icon.
+After we've made all of our edits, we can exit Edit Mode by clicking the pencil icon again, which should revert the icon's appearance to its original form. From here, we can either download the edited references as JSON by clicking the export icon to the left of the pencil icon, or exit Display Mode entirely by clicking the &#10005; icon to the right of the pencil icon.
 
 ![Displaying and Editing Selected References Example](https://user-images.githubusercontent.com/40524990/144171520-7faceea2-6e76-4d58-b588-0cc95e81ccc0.gif)
 
 ## Deleting References
 
-If you decide you want to start over and delete the references you've previously captured, you can select "Delete References" in the popup UI, which will remove the references from [`localStorage`](https://developer.mozilla.org/en-US/docs/Web/API/Window/localStorage).
+If we decide we want to start over and delete the references we've previously captured, we can select "Delete References" in the popup UI, which will remove the references from [`localStorage`](https://developer.mozilla.org/en-US/docs/Web/API/Window/localStorage).
 
 ![Delete References Example](https://user-images.githubusercontent.com/40524990/144171974-36d5cbda-eb91-40b6-bb3b-645ea429951b.gif)
 
 ## Downloading References
 
-If you're satisfied with the references you've currently captured/edited and want to download these references (text and any external links) as JSON, you can do so simply by clicking "Download References" in the popup UI.
+If we're satisfied with the references we've currently captured/edited and want to download these references (text and any external links) as JSON, we can do so simply by clicking "Download References" in the popup UI.
 
-This will create a JSON file that is named based on the lowercased version of the last portion (splitting based on `/` and ignoring document sections indicated by `#`) of the `document.baseURI` of the current page. For instance, if the current page (and section) you've navigated to and captured references on is [`https://en.wikipedia.org/wiki/Hard_disk_drive#References`](https://en.wikipedia.org/wiki/Hard_disk_drive#References), downloading the references will generate `hard_disk_drive.json`.
+This will create a JSON file that is named based on the lowercased version of the last portion (splitting based on `/` and ignoring document sections indicated by `#`) of the `document.baseURI` of the current page. For instance, if the current page (and section) we've navigated to and captured references on is [`https://en.wikipedia.org/wiki/Hard_disk_drive#References`](https://en.wikipedia.org/wiki/Hard_disk_drive#References), downloading the references will generate `hard_disk_drive.json`.
 
 ![Download References Example](https://user-images.githubusercontent.com/40524990/144171621-f88ad75c-c54c-40b5-9c9e-8e3b2d503adf.gif)
 
