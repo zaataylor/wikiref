@@ -68,9 +68,7 @@ Wikiref is comprised of three components, following the pattern used by extensio
 
 ### Anatomy of a Reference
 
-A reference is represented by a relatively simple data structure. It is a JavaScript object that consists of `text`, `links`, and `id` properties. `text` is a string containing the text of the reference as it appears on the topic page. `links` is an array containing the `href` values of each _external_ link included in the specific reference text; currently internal links aren't captured. `id` is an incrementing integer value that indicates the order in which a reference was extracted.
-
-In the future, I'll probably augment the existing data structure so that it contains a hash of the original contents of the captured reference. This'll make it easier to add in deduplication logic in the case that a user selects the same reference twice.
+A reference is represented by a relatively simple data structure. It is a JavaScript object that consists of `text`, `links`, `hash`, and `id` properties. `text` is a string containing the text of the reference as it appears on the topic page. `links` is an array containing the `href` values of each _external_ link included in the specific reference text; currently internal links aren't captured. `hash` is a SHA-1 hash of the normalized `document.baseURI` concatenated with `text` using the `|` character as a separator. `id` is an incrementing integer value that indicates the order in which a reference was extracted.
 
 ### Capturing References
 
@@ -89,14 +87,18 @@ The algorithm for capturing references is relatively straightforward. Here's the
     * Extracts a reference from a child element.
     * This should be an <li>
     */
-   function extractReference(child, index) {
+   async function extractReference(child, index) {
    	var ref = {
    		id: index,
+   		hash: "",
    		text: "",
    		links: [],
    	};
 
    	ref.text = child.innerText;
+   	// Hash based on current document and text of reference.
+   	ref.hash = await digestMessage(`${getBaseURI()}|${ref.text}`);
+
    	var a_children = child.getElementsByTagName("a");
    	for (var k = 0; k < a_children.length; k++) {
    		// Extract the unique links that are external references only (for now)
