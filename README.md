@@ -2,13 +2,13 @@
   <img src="https://img.shields.io/badge/project%20type-toy-blue" alt="Toy Badge"/>
 </a>
 
-# Description
+# Description ![Wikiref Logo](icons/wikiref-48.png)
 
 Wikipedia, the world's online encyclopedia, is a useful, curated source of information. Often, however, it's said that one of the most value parts of any given Wikipedia article are not the user-contributed topic explanations, but the references and external links from which those explanations are based.
 
 Wikiref aims to make the process of extracting these sources for later review or analysis dead simple. It operates as a Firefox (and soon to be Chrome!) browser extension that is only active when you're on a Wikipedia page.
 
-# How to Use It
+# How to Use It ![Wikiref Logo](icons/wikiref-48.png)
 
 We'll illustrate how to use Wikiref by extracting some references from [this](https://en.wikipedia.org/wiki/Dynamic_array) Wikipedia page about dynamic arrays:
 ![Dynamic Arrays Image](assets/dynamic-array-page.png)
@@ -44,7 +44,7 @@ If you're satisfied with the references you've currently captured/edited and wan
 
 This will create a JSON file that is named based on the lowercased version of the last portion (splitting based on `/` and ignoring document sections indicated by `#`) of the `document.baseURI` of the current page. For instance, if the current page (and section) you've navigated to and captured references on is [`https://en.wikipedia.org/wiki/Hard_disk_drive#References`](https://en.wikipedia.org/wiki/Hard_disk_drive#References), downloading the references will generate `hard_disk_drive.json`.
 
-# How It Works
+# How It Works ![Wikiref Logo](icons/wikiref-48.png)
 
 ## Architecture
 
@@ -57,7 +57,9 @@ Wikiref is comprised of three components, following the pattern used by extensio
 ### Popup
 
 `popup.js`: Logic in this script listens for clicks on the extension popup and sends specific messages to the content script running in the active tab of the current window, triggering different extension modes such as Select Mode and Display Mode.
+
 `popup.css`: Styling for the popup.
+
 `wikiref.html`: Skeleton of the popup.
 
 ### Content
@@ -68,7 +70,7 @@ Wikiref is comprised of three components, following the pattern used by extensio
 
 ### Anatomy of a Reference
 
-A reference is represented by a relatively simple data structure. It is a JavaScript object that consists of `text`, `links`, `hash`, and `id` properties. `text` is a string containing the text of the reference as it appears on the topic page. `links` is an array containing the `href` values of each _external_ link included in the specific reference text; currently internal links aren't captured. `hash` is a SHA-1 hash of the normalized `document.baseURI` concatenated with `text` using the `|` character as a separator. `id` is an incrementing integer value that indicates the order in which a reference was extracted.
+A reference is represented by a relatively simple data structure. It is a JavaScript object that consists of `text`, `links`, `hash`, and `id` properties. `text` is a string containing the text of the reference as it appears on the topic page. `links` is an array containing the `href` values of each _external_ link included in the specific reference text; currently non-external links aren't captured. `hash` is a SHA-1 hash of the normalized `document.baseURI` concatenated with `text` using the `|` character as a separator. `id` is an incrementing integer value that indicates the order in which a reference was extracted.
 
 ### Capturing References
 
