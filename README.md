@@ -1,14 +1,40 @@
-<a href="https://project-types.github.io/#toy">
-  <img src="https://img.shields.io/badge/project%20type-toy-blue" alt="Toy Badge"/>
-</a>
+<a href="https://project-types.github.io/#toy"><img src="https://img.shields.io/badge/project%20type-toy-blue" alt="Toy Badge"/></a>
 
-# Description ![Wikiref Logo](icons/wikiref-48.png)
+![Wikiref Logo](icons/wikiref-48.png)
+
+# Description
 
 Wikipedia, the world's online encyclopedia, is a useful, curated source of information. Often, however, it's said that one of the most value parts of any given Wikipedia article are not the user-contributed topic explanations, but the references and external links from which those explanations are based.
 
 Wikiref aims to make the process of extracting these sources for later review or analysis dead simple. It operates as a Firefox (and soon to be Chrome!) browser extension that is only active when you're on a Wikipedia page.
 
-# How to Use It ![Wikiref Logo](icons/wikiref-48.png)
+- [Installation](#installation)
+- [How to Use It](#how-to-use-it)
+  - [Selecting References](#selecting-references)
+  - [Displaying and Editing References](#displaying-and-editing-selected-references)
+  - [Deleting References](#deleting-references)
+  - [Downloading References](#downloading-references)
+- [How It Works](#how-it-works)
+  - [Architecture](#architecture)
+    - [Background](#background)
+    - [Popup](#popup)
+    - [Content](#content)
+  - [References](#references)
+    - [Anatomy of a Reference](#anatomy-of-a-reference)
+    - [Capturing References](#capturing-references)
+
+# Installation
+
+Currently, Wikiref is not in the Firefox Add-ons store, so you can only add it as a temporary add-on. I do plan to apply to get this put on the extension store, but in the meantime, here are instructions for adding it as a temporary add-on in Firefox:
+
+1. Clone the repo: `git clone https://github.com/zaataylor/wikiref.git`
+2. Navigate to `about:debugging`
+3. Select "This Firefox"
+4. Click "Load Temporary Add-on"
+5. Find the location of the cloned Wikiref repository from the dropdown and click on any file in the extension directory.
+6. Navigate to a Wikipedia page and have fun! :)
+
+# How to Use It
 
 We'll illustrate how to use Wikiref by extracting some references from [this](https://en.wikipedia.org/wiki/Dynamic_array) Wikipedia page about dynamic arrays:
 ![Dynamic Arrays Image](assets/dynamic-array-page.png)
@@ -44,7 +70,7 @@ If you're satisfied with the references you've currently captured/edited and wan
 
 This will create a JSON file that is named based on the lowercased version of the last portion (splitting based on `/` and ignoring document sections indicated by `#`) of the `document.baseURI` of the current page. For instance, if the current page (and section) you've navigated to and captured references on is [`https://en.wikipedia.org/wiki/Hard_disk_drive#References`](https://en.wikipedia.org/wiki/Hard_disk_drive#References), downloading the references will generate `hard_disk_drive.json`.
 
-# How It Works ![Wikiref Logo](icons/wikiref-48.png)
+# How It Works
 
 ## Architecture
 
